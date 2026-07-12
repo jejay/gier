@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Test repositories (cloned sub-repos; not tracked)
+test-repos/

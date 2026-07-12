@@ -1,0 +1,42 @@
+Kotlin:
+  - https://github.com/meshtastic/Meshtastic-Android
+  - https://github.com/signalapp/Signal-Android
+  - https://github.com/samyak2403/RepoStore
+
+Java:
+  - https://github.com/Anuken/Mindustry
+  - https://github.com/kestra-io/kestra
+  - https://github.com/dataease/dataease
+
+C:
+  - https://github.com/apache/httpd
+  - https://github.com/madler/zlib
+  - https://github.com/FreeRTOS/FreeRTOS-Kernel
+  - https://github.com/libgit2/libgit2
+
+C++:
+  - https://github.com/zeux/meshoptimizer
+  - https://github.com/bitcoin/bitcoin
+  - https://github.com/jrouwe/JoltPhysics
+  - https://github.com/ocornut/imgui
+  - https://github.com/godotengine/godot
+  - https://github.com/nlohmann/json
+  - https://github.com/duckdb/duckdb
+  - https://github.com/facebookresearch/faiss
+  - https://github.com/google/leveldb
+
+JavaScript:
+  - https://github.com/expressjs/express
+  - https://github.com/webtorrent/webtorrent
+  - https://github.com/mochajs/mocha
+  - https://github.com/fastify/fastify
+  - https://github.com/sveltejs/svelte
+  - https://github.com/naptha/tesseract.js
+  - https://github.com/openclaw/openclaw
+  - https://github.com/immich-app/immich
+
+Python:
+  - https://github.com/home-assistant/core
+  - https://github.com/yt-dlp/yt-dlp
+  - https://github.com/ijl/orjson
+  - https://github.com/jazzband/tablib
