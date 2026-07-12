@@ -12,6 +12,24 @@ For every compound statement it reports:
 * the 1-based ``(line, column)`` of the **last** character of the last line of
   code contained in that block (the closing ``}`` for curly-brace languages).
 
+## Design principles
+
+**Simplicity is the core design principle.** The tool should be easy to *use*
+and easy to *understand by reading its code*. It is intentionally a small,
+heuristic block matcher — not a real language parser.
+
+From that follows:
+
+* Minor quirks with unusual syntax or coding styles are **acceptable**. The
+tool is tuned for typical function / method / class / control-flow structure,
+not for every legal program.
+* A **small, well-localized, easy-to-understand change** that targets a
+particular language or syntax style and makes a *large* difference in output
+quality **is warranted** — even if it is language-specific. Such fixes should
+read clearly (a short comment explaining the *why* is enough).
+* Conversely, broad machinery added to chase every edge case is **not** — it
+works against the principle. Prefer a clear heuristic over a clever one.
+
 ## Output format
 
 ```

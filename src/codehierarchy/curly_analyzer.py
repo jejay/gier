@@ -31,6 +31,23 @@ _CLASSY = {
 }
 _FUNCY = {"fn", "func", "function", "fun", "def", "sub"}
 
+# Declaration-starting keywords. When one of these begins a new line
+# (previous significant token on a different line, at paren depth 0), we start a
+# fresh statement. This matters for languages without statement-terminating
+# semicolons (Kotlin, Go, Rust, Swift, ...), where otherwise a top-level
+# `package`/`import`/`annotation` would merge with the following `fun`/`class`.
+_DECL_STARTERS = (
+    _CONTROL
+    | _CLASSY
+    | _FUNCY
+    | {
+        "package", "import", "val", "var", "let", "const", "type",
+        "trait", "impl", "mod", "namespace", "record", "protocol",
+        "extension", "actor", "object", "struct", "interface", "enum",
+        "class", "fun", "fn", "func", "function", "def", "sub",
+    }
+)
+
 
 # --------------------------------------------------------------------------
 # Tokenizer
@@ -285,6 +302,17 @@ def analyze_curly(source: str, language: str | None = None) -> str:
                 stmt_start = None
                 header = []
         elif kind == "word":
+            # A declaration keyword at the start of a new line begins a fresh
+            # statement (see _DECL_STARTERS). Guard with paren == 0 so we don't
+            # split a multi-line expression such as `val x = foo(\n  when (...)`.
+            if (
+                text in _DECL_STARTERS
+                and paren == 0
+                and (p == 0 or toks[p - 1][1] != line)
+            ):
+                stmt_start = None
+                header = []
+                in_for_header = False
             if stmt_start is None:
                 stmt_start = (line, col)
                 header = [(text, line, col, kind)]
