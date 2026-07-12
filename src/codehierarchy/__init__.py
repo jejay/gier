@@ -1,3 +1,3 @@
-from .core import analyze
+from .core import analyze, detect_language
 
-__all__ = ["analyze"]
+__all__ = ["analyze", "detect_language"]
