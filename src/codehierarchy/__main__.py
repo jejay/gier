@@ -2,13 +2,13 @@
 
 This module provides two commands:
 
-``chier`` -- Code HIERarchy. Recognizes the code-block structure of source
+``chier`` -- Code HIERarchy. Recognizes the code-block hierarchy of source
 files and prints it as a single line (see ``codehierarchy.output``). A trailing
 newline is always emitted.
 
 ``gier`` -- Grep code HIERarchy. Instead of querying a line number, it matches
 a regular expression against the file's lines and, for each match, prints the
-enclosing block structure in the style of a ``chier`` code query.
+enclosing block hierarchy in the style of a ``chier`` code query.
 
 chier
 -----
@@ -62,9 +62,9 @@ from .output import format_blocks
 
 
 CHIER_HELP = """chier \u2014 Code HIERarchy
-Print a file's code-block structure as a single line, or query the block path
-to a given line. A structure-aware, token-friendly alternative to grep, built
-for coding agents and LLMs that need to know *where* code lives \u2014 not just
+Print a file's code-block hierarchy as a single line, or query the block path
+to a given line. A hierarchy-aware, token-friendly companion to grep, built for
+coding agents and LLMs that need to know *where* code lives \u2014 not just
 that it exists.
 
 Usage:
@@ -85,11 +85,13 @@ if a file cannot be read or (for Python) fails to parse.
 
 
 GIER_HELP = """gier \u2014 Grep code HIERarchy
+gier is grep with code block hierarchy awareness.
+
 Search files for a Python regular expression and, for every hit, print the
-enclosing block's structure. A smarter, structure-aware replacement for grep,
-tuned for agentic / LLM code inspection: each match comes with the function,
-method, or class it lives in. Matches outside any block (docstrings, imports,
-top-level code) fall back to classic grep output.
+enclosing block's hierarchy. A smarter replacement for grep, tuned first for
+agentic / LLM code inspection yet just as handy for humans. Each match comes
+with the function, method, or class it lives in; matches outside any block
+(docstrings, imports, top-level code) fall back to classic grep output.
 
 Usage:
   gier [-iHh] [-M N] [-N N] PATTERN FILE [.. [FILE]]
@@ -447,7 +449,7 @@ def gier_main(argv: list[str] | None = None) -> int:
         try:
             blocks = analyze_blocks(source, path=path)
         except SyntaxError:
-            # Python source that fails to parse: report no block structure for
+            # Python source that fails to parse: report no block hierarchy for
             # this file rather than failing the whole run.
             blocks = []
         lines = source.splitlines()
