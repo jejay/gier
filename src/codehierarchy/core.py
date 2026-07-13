@@ -54,21 +54,26 @@ def detect_language(path: str | None, language: str | None) -> str:
     return "python"
 
 
-def analyze_blocks(source: str, path: str | None = None, language: str | None = None) -> list[tuple]:
+def analyze_blocks(source: str, path: str | None = None, language: str | None = None, allow_fp_objects: bool = False) -> list[tuple]:
     """Return the raw block list for ``source``.
 
     Each block is ``(start_line, start_col, level, decl, end_line, end_col)``
     with 1-based columns. Dispatches on the detected language.
+
+    ``allow_fp_objects`` only affects curly-brace languages: when set, a ``{``
+    after ``=``, ``:``, ``,``, ``[`` or ``return`` is treated as a block even
+    though it may be an object/collection literal (useful to also catch inline
+    functions that look like object literals).
     """
     lang = detect_language(path, language)
     if lang == "python":
         return python_blocks(source)
-    return curly_blocks(source, lang)
+    return curly_blocks(source, lang, allow_fp_objects=allow_fp_objects)
 
 
-def analyze(source: str, path: str | None = None, language: str | None = None) -> str:
+def analyze(source: str, path: str | None = None, language: str | None = None, allow_fp_objects: bool = False) -> str:
     """Return the single-line block-structure description of ``source``."""
-    return format_blocks(analyze_blocks(source, path, language))
+    return format_blocks(analyze_blocks(source, path, language, allow_fp_objects=allow_fp_objects))
 
 
 def block_path(blocks: list[tuple], line: int) -> list[tuple]:

@@ -27,6 +27,12 @@ For ``-c`` two length filters apply:
 * ``-M``/``--max-block-length`` (default 99999) -- blocks longer than ``M``
   lines are not printed verbatim; their source is collapsed to one
   ``[line-number]:[code line]`` per line.
+
+``--fpobjects`` relaxes the object-literal heuristic: a ``{`` after ``=``,
+``:``, ``,``, ``[`` or ``return`` is treated as a block even though it may be
+an object/collection literal. This catches inline functions that look like
+object literals (e.g. Swift closures, switch-case blocks) at the cost of some
+false-positive objects.
 """
 
 import sys
@@ -35,12 +41,13 @@ from .core import analyze, analyze_blocks, block_path, effective_block, block_le
 from .output import format_blocks
 
 
-def _parse_args(argv: list[str]) -> tuple[list[str], int | None, int | None, int, int]:
+def _parse_args(argv: list[str]) -> tuple[list[str], int | None, int | None, int, int, bool]:
     paths: list[str] = []
     path_query: int | None = None
     code_query: int | None = None
     min_length: int = 5
     max_length: int = 99999
+    allow_fp_objects: bool = False
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -68,6 +75,10 @@ def _parse_args(argv: list[str]) -> tuple[list[str], int | None, int | None, int
             max_length = _parse_int("--max-block-length/-M", argv[i + 1])
             i += 2
             continue
+        if a in ("--fpobjects",):
+            allow_fp_objects = True
+            i += 1
+            continue
         if a.startswith("--path-query="):
             path_query = _parse_line("--path-query/-p", a.split("=", 1)[1])
             i += 1
@@ -84,9 +95,13 @@ def _parse_args(argv: list[str]) -> tuple[list[str], int | None, int | None, int
             max_length = _parse_int("--max-block-length", a.split("=", 1)[1])
             i += 1
             continue
+        if a.startswith("--fpobjects="):
+            allow_fp_objects = _parse_bool("--fpobjects", a.split("=", 1)[1])
+            i += 1
+            continue
         paths.append(a)
         i += 1
-    return paths, path_query, code_query, min_length, max_length
+    return paths, path_query, code_query, min_length, max_length, allow_fp_objects
 
 
 def _parse_line(flag: str, value: str) -> int:
@@ -97,6 +112,15 @@ def _parse_line(flag: str, value: str) -> int:
     if n < 1:
         raise SystemExit(f"{flag} line number must be >= 1")
     return n
+
+
+def _parse_bool(flag: str, value: str) -> bool:
+    v = value.strip().lower()
+    if v in ("1", "true", "yes", "on"):
+        return True
+    if v in ("0", "false", "no", "off"):
+        return False
+    raise SystemExit(f"{flag} requires a boolean (true/false)")
 
 
 def _parse_int(flag: str, value: str) -> int:
@@ -112,7 +136,7 @@ def _parse_int(flag: str, value: str) -> int:
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     try:
-        paths, path_query, code_query, min_length, max_length = _parse_args(argv)
+        paths, path_query, code_query, min_length, max_length, allow_fp_objects = _parse_args(argv)
     except SystemExit as exc:
         print(f"codehierarchy: {exc}", file=sys.stderr)
         return 2
@@ -130,7 +154,7 @@ def main(argv: list[str] | None = None) -> int:
 
     query_line = code_query if code_query is not None else path_query
     if query_line is None:
-        return _run_normal(paths)
+        return _run_normal(paths, allow_fp_objects)
 
     # Query mode: print the block path to the block containing `query_line`.
     path = paths[0]
@@ -141,7 +165,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"codehierarchy: cannot read {path}: {exc}", file=sys.stderr)
         return 1
     try:
-        blocks = analyze_blocks(source, path=path)
+        blocks = analyze_blocks(source, path=path, allow_fp_objects=allow_fp_objects)
     except SyntaxError as exc:
         print(f"codehierarchy: syntax error in {path}: {exc}", file=sys.stderr)
         return 1
@@ -170,7 +194,7 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _run_normal(paths: list[str]) -> int:
+def _run_normal(paths: list[str], allow_fp_objects: bool = False) -> int:
     rc = 0
     for path in paths:
         try:
@@ -181,7 +205,7 @@ def _run_normal(paths: list[str]) -> int:
             rc = 1
             continue
         try:
-            sys.stdout.write(analyze(source, path=path) + "\n")
+            sys.stdout.write(analyze(source, path=path, allow_fp_objects=allow_fp_objects) + "\n")
         except SyntaxError as exc:
             print(f"codehierarchy: syntax error in {path}: {exc}", file=sys.stderr)
             rc = 1

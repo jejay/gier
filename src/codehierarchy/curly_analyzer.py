@@ -215,14 +215,26 @@ def _compute_decl(core_texts: list[str]) -> str:
     return _join(core_texts)
 
 
-def _is_block(core_texts: list[str], prev_text: str | None) -> tuple[bool, bool]:
+# Tokens that, when immediately before a ``{``, signal an object/collection
+# initializer rather than a code block. With ``allow_fp_objects`` we accept the
+# ambiguity (treating the ``{`` as a block) to also capture inline functions
+# that look like object literals -- at the cost of some false-positive objects.
+OBJECT_STARTERS = ("=", ":", ",", "[", "return")
+
+
+def _is_block(core_texts: list[str], prev_text: str | None, allow_fp_objects: bool = False) -> tuple[bool, bool]:
     """Return ``(is_block, is_arrow)``.
 
     Object/collection initializers (``= {``, ``: {``, ``, {``, ``[ {``,
-    ``return {``) and arrow-function object literals (``=> ({``) are rejected.
-    A plain ``=> {`` arrow function is accepted and flagged as an arrow block.
+    ``return {``) are rejected. When ``allow_fp_objects`` is set we no longer
+    reject those -- a ``{`` in such a position cannot be told apart from an
+    anonymous function, so we prefer to capture it (accepting that some real
+    object literals will then be reported as blocks).
+
+    A plain ``=> {`` arrow function is accepted and flagged as an arrow block;
+    ``=> ({`` (arrow returning an object literal) stays rejected.
     """
-    if prev_text in ("=", ":", ",", "[", "return"):
+    if prev_text in OBJECT_STARTERS and not allow_fp_objects:
         return False, False
     if not core_texts:
         return False, False
@@ -239,7 +251,7 @@ def _is_block(core_texts: list[str], prev_text: str | None) -> tuple[bool, bool]
 # --------------------------------------------------------------------------
 # Analyzer
 # --------------------------------------------------------------------------
-def curly_blocks(source: str, language: str | None = None) -> list[tuple]:
+def curly_blocks(source: str, language: str | None = None, allow_fp_objects: bool = False) -> list[tuple]:
     raw = tokenize(source)
     toks = [t for t in raw if t[3] != "skip"]
     n = len(toks)
@@ -259,7 +271,7 @@ def curly_blocks(source: str, language: str | None = None) -> list[tuple]:
             if stmt_start is not None and header:
                 core = _strip_enclosing(header)
                 core_texts = [t[0] for t in core]
-                ok, is_arrow = _is_block(core_texts, prev_text)
+                ok, is_arrow = _is_block(core_texts, prev_text, allow_fp_objects)
                 if ok:
                     decl = "(arrow)" if is_arrow else _compute_decl(core_texts)
                     level = depth

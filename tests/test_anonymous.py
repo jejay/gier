@@ -224,6 +224,37 @@ class TestAnonymousBlockContract(unittest.TestCase):
         out = core.analyze("let f = { x in x }\n", path="a.swift")
         self.assertEqual(out.strip(), "")
 
+    def test_fpobjects_captures_swift_assigned_closure(self):
+        # With --fpobjects the ambiguous `= {` is treated as a block, so the
+        # Swift closure is captured (decl "f=").
+        off = core.analyze("let f = { x in x }\n", path="a.swift", allow_fp_objects=False)
+        on = core.analyze("let f = { x in x }\n", path="a.swift", allow_fp_objects=True)
+        self.assertEqual(off.strip(), "")
+        self.assertIn("f=", on)
+
+    def test_fpobjects_captures_switch_case_block(self):
+        # `case X: { ... }` is currently missed (`: {` rejected); with the flag
+        # it is captured as a block (decl "case").
+        src = "switch (x) {\n  case 1: { foo(); }\n}\n"
+        off = core.analyze(src, path="a.js", allow_fp_objects=False)
+        on = core.analyze(src, path="a.js", allow_fp_objects=True)
+        self.assertNotIn("/case", off)
+        self.assertIn("/case", on)
+
+    def test_fpobjects_object_literal_false_positive(self):
+        # A real object literal `const o = { a: 1 }` is captured with the flag
+        # too -- that is the accepted false positive.
+        src = "const o = { a: 1, b: 2 };\n"
+        off = core.analyze(src, path="a.js", allow_fp_objects=False)
+        on = core.analyze(src, path="a.js", allow_fp_objects=True)
+        self.assertNotIn("const o=", off)
+        self.assertIn("const o=", on)
+
+    def test_fpobjects_is_noop_for_python(self):
+        out_off = core.analyze("def g():\n    f = lambda a: a\n", path="a.py", allow_fp_objects=False)
+        out_on = core.analyze("def g():\n    f = lambda a: a\n", path="a.py", allow_fp_objects=True)
+        self.assertEqual(out_off, out_on)
+
     def test_python_lambda_not_a_block(self):
         # Python lambdas have no braces, so they are never a block
         out = core.analyze("def g():\n    f = lambda a: a\n", path="a.py")
