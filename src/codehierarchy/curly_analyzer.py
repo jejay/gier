@@ -239,7 +239,7 @@ def _is_block(core_texts: list[str], prev_text: str | None) -> tuple[bool, bool]
 # --------------------------------------------------------------------------
 # Analyzer
 # --------------------------------------------------------------------------
-def analyze_curly(source: str, language: str | None = None) -> str:
+def curly_blocks(source: str, language: str | None = None) -> list[tuple]:
     raw = tokenize(source)
     toks = [t for t in raw if t[3] != "skip"]
     n = len(toks)
@@ -324,4 +324,9 @@ def analyze_curly(source: str, language: str | None = None) -> str:
                 header.append((text, line, col, kind))
         p += 1
 
-    return format_blocks(blocks)
+    return blocks
+
+
+def analyze_curly(source: str, language: str | None = None) -> str:
+    """Return the single-line block-structure description of ``source``."""
+    return format_blocks(curly_blocks(source, language))

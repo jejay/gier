@@ -14,8 +14,9 @@ from __future__ import annotations
 
 import os
 
-from .curly_analyzer import analyze_curly
-from .python_analyzer import analyze_python
+from .curly_analyzer import curly_blocks
+from .python_analyzer import python_blocks
+from .output import format_blocks
 
 # Map file extensions to a language key.
 EXT_LANG = {
@@ -53,9 +54,48 @@ def detect_language(path: str | None, language: str | None) -> str:
     return "python"
 
 
-def analyze(source: str, path: str | None = None, language: str | None = None) -> str:
-    """Return the single-line block-structure description of ``source``."""
+def analyze_blocks(source: str, path: str | None = None, language: str | None = None) -> list[tuple]:
+    """Return the raw block list for ``source``.
+
+    Each block is ``(start_line, start_col, level, decl, end_line, end_col)``
+    with 1-based columns. Dispatches on the detected language.
+    """
     lang = detect_language(path, language)
     if lang == "python":
-        return analyze_python(source)
-    return analyze_curly(source, lang)
+        return python_blocks(source)
+    return curly_blocks(source, lang)
+
+
+def analyze(source: str, path: str | None = None, language: str | None = None) -> str:
+    """Return the single-line block-structure description of ``source``."""
+    return format_blocks(analyze_blocks(source, path, language))
+
+
+def block_path(blocks: list[tuple], line: int) -> list[tuple]:
+    """Return the ancestry chain (root first) of the innermost block that
+    contains ``line`` (1-based), or ``[]`` when no block contains it.
+
+    ``line`` is taken to belong to the deepest (most-nested) block whose span
+    covers it; its ancestors are found by walking up to the nearest preceding
+    block at a lower level, which is the correct parent under a source-order
+    (pre-order) traversal.
+    """
+    containing = [b for b in blocks if b[0] <= line <= b[4]]
+    if not containing:
+        return []
+    innermost = max(containing, key=lambda b: b[2])
+    idx = blocks.index(innermost)
+    chain = [idx]
+    cur = idx
+    while True:
+        parent = None
+        for j in range(cur - 1, -1, -1):
+            if blocks[j][2] < blocks[cur][2]:
+                parent = j
+                break
+        if parent is None:
+            break
+        chain.append(parent)
+        cur = parent
+    chain.reverse()
+    return [blocks[i] for i in chain]

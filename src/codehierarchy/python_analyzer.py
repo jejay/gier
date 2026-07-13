@@ -179,8 +179,12 @@ def _add_try_else_finally(try_node, src_lines: list[str], add) -> None:
             add(ln, indent, el, ec, "finally")
 
 
-def analyze_python(source: str) -> str:
-    """Return the single-line block-structure description of ``source``."""
+def python_blocks(source: str) -> list[tuple]:
+    """Return the raw block list for ``source``.
+
+    Each block is ``(start_line, start_col, level, decl, end_line, end_col)``
+    with 1-based columns, ready to be rendered by ``output.format_blocks``.
+    """
     tree = ast.parse(source)
     src_lines = source.splitlines()
     # (lineno, col_offset, end_lineno, end_col_offset, decl)
@@ -246,4 +250,9 @@ def analyze_python(source: str) -> str:
         # end_col_offset (exclusive 0-based) == last character position.
         blocks.append((sl, sc + 1, level, decl, el, ec))
 
-    return format_blocks(blocks)
+    return blocks
+
+
+def analyze_python(source: str) -> str:
+    """Return the single-line block-structure description of ``source``."""
+    return format_blocks(python_blocks(source))

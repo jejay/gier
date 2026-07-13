@@ -103,6 +103,10 @@ cat file.ts | uv run python -m codehierarchy --language typescript
 
 # multiple files
 uv run codehierarchy a.py b.c c.java
+
+# block path to a given line (chain of enclosing blocks, '>' only)
+uv run codehierarchy -s 47 file.py
+uv run codehierarchy -q 47 file.py   # also prints the enclosing block's source
 ```
 
 Exit status is non-zero if a file cannot be read or (for Python) contains a
