@@ -42,8 +42,8 @@ EXT_LANG = {
 def detect_language(path: str | None, language: str | None) -> str:
     """Resolve the language key from an explicit override or the file path.
 
-    Falls back to ``"python"`` when neither is available (e.g. stdin without
-    ``--language``), since the tool originated as a Python analyzer.
+    Falls back to ``"python"`` when the extension is unknown, since the tool
+    originated as a Python analyzer.
     """
     if language:
         return language

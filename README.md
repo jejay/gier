@@ -76,8 +76,7 @@ int main() {
 
 ## Supported languages
 
-The language is detected from the file extension (or an explicit
-`--language` override, useful for stdin):
+The language is detected from the file extension:
 
 * **Python** (`.py`/`.pyw`/`.pyi`) — parsed with the `ast` module.
 * **Curly-brace languages** — a tokenizer + simple block matcher pairs every
@@ -98,15 +97,12 @@ control flow (`if`/`elif`/`else`/`for`/`while`/`switch`/`try`/`catch`/
 uv run codehierarchy file.py
 uv run codehierarchy file.c
 
-# force a language (handy for stdin)
-cat file.ts | uv run python -m codehierarchy --language typescript
-
 # multiple files
 uv run codehierarchy a.py b.c c.java
 
 # block path to a given line (chain of enclosing blocks, '>' only)
 uv run codehierarchy -s 47 file.py
-uv run codehierarchy -q 47 file.py   # also prints the enclosing block's source
+uv run codehierarchy -l 47 file.py   # -l also prints the enclosing block's source
 ```
 
 Exit status is non-zero if a file cannot be read or (for Python) contains a
@@ -118,8 +114,6 @@ syntax error.
 from codehierarchy import analyze
 
 description = analyze(open("file.c").read(), path="file.c")
-# or force a language:
-description = analyze(source, language="typescript")
 ```
 
 ## How it works
