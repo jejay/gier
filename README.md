@@ -4,15 +4,27 @@
 
 `gier` is a KISS command-line tool that tells you *which code block* a piece of
 code lives in — the enclosing function, class, and control flow — instead of
-just a bare line like plain `grep`. It is built agentic-first (for coding
-agents and LLMs that need structural context), yet human-friendly enough to use
-by hand. `chier` is the companion you reach for when you want the whole-file
+just a bare line like plain `grep`. It grew out of watching coding agents (and
+people) poke around with `grep` and wish they could see the surrounding block
+hierarchy at a glance; the hope is simply that your friendly coding agent finds
+it useful. `chier` is the companion you reach for when you want the whole-file
 hierarchy or a direct "what encloses line N?" query.
 
-Both detect the language from the file extension and understand Python,
-C, C++, Java, Kotlin, JavaScript, TypeScript, C#, Go, Rust, Swift, Scala,
-Dart, PHP, and friends — with no real parser, just a deliberately simple,
-tolerant block matcher.
+## Install
+
+```
+uv tool install gier
+```
+
+This installs both `gier` and `chier` onto your `uv` tool path, so you can run
+them directly (no `uv run` needed):
+
+```
+gier "def " "src/**/*.py"
+chier -c 47 file.py
+```
+
+If you prefer pip: `pip install gier`.
 
 ## The block-path syntax
 
@@ -59,7 +71,7 @@ file, or per match — which is what makes it easy for an agent to parse.
 ## gier — Grep code HIERarchy
 
 ```bash
-uv run gier [-iHh] [-M N] [-N N] PATTERN FILE [.. [FILE]]
+gier [-iHh] [-M N] [-N N] PATTERN FILE [.. [FILE]]
 ```
 
 For each `FILE` (expanded with Python's `glob`, so `**/*.py` works) every line
@@ -89,8 +101,8 @@ the globs resolve to more than one file. Findings are separated by a `--` line
 ## chier — Code HIERarchy
 
 ```bash
-uv run chier PATH [PATH ...]
-uv run chier (-p|-c) LINE PATH
+chier PATH [PATH ...]
+chier (-p|-c) LINE PATH
 ```
 
 * `-p LINE` / `--path-query LINE` — print the chain of nested blocks enclosing
