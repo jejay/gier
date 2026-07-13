@@ -256,6 +256,16 @@ def _is_glob(pattern: str) -> bool:
     return any(c in "*?[" for c in pattern)
 
 
+def _compile_pattern(pattern: str, ignore_case: bool) -> "re.Pattern":
+    """Compile a gier search pattern.
+
+    ``re.MULTILINE`` is always set so ``^``/``$`` anchor to line boundaries;
+    ``re.IGNORECASE`` is added for ``-i``.
+    """
+    flags = re.MULTILINE | (re.IGNORECASE if ignore_case else 0)
+    return re.compile(pattern, flags)
+
+
 def _parse_gier_args(argv: list[str]) -> tuple[str, list[str], bool, bool, bool, int, int]:
     ignore_case = False
     with_filename = False
@@ -340,7 +350,7 @@ def gier_main(argv: list[str] | None = None) -> int:
         return 2
 
     try:
-        regex = re.compile(pattern, re.IGNORECASE if ignore_case else 0)
+        regex = _compile_pattern(pattern, ignore_case)
     except re.error as exc:
         print(f"gier: invalid pattern: {exc}", file=sys.stderr)
         return 2
@@ -388,11 +398,15 @@ def gier_main(argv: list[str] | None = None) -> int:
             if regex.search(line):
                 block_path_str, code = _code_for_line(blocks, source, lineno, min_length, max_length)
                 prefix = f"{path}:" if show_name else ""
-                findings.append(f"{prefix}{block_path_str}\n" + "\n".join(code) + "\n--\n")
+                findings.append(f"{prefix}{block_path_str}\n" + "\n".join(code) + "\n")
                 rc = 0
 
     if findings:
-        sys.stdout.write("\n".join(findings))
+        # The "--" separator is printed only *between* findings (never after the
+        # last one), and only when there is more than one finding, so a single
+        # match has no separator at all.
+        out = "".join(f + "--\n" for f in findings[:-1]) + findings[-1]
+        sys.stdout.write(out)
     return 2 if had_error else rc
 
 

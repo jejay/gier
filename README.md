@@ -171,12 +171,13 @@ Each finding is formatted as:
 ```
 [path:]<block path>
 <code>
---
 ```
 
-followed by a blank line before the next finding. The `<block path>` is the
-`chier` block-path line; `<code>` is the enclosing block's source (or, under
-`-M`, a single `line:code` line).
+Findings are separated by a `--` line (a single newline on each side). The
+`--` separator is printed **only between** findings -- never after the last
+one, and only when there is more than one finding, so a single match has no
+separator at all. The `<block path>` is the `chier` block-path line; `<code>`
+is the enclosing block's source (or, under `-M`, a single `line:code` line).
 
 Exit status: `0` if any match was found, `1` if none, `2` on error (bad
 pattern, missing file, unreadable file).

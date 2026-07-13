@@ -1,6 +1,7 @@
 import contextlib
 import io
 import os
+import re
 import tempfile
 import unittest
 
@@ -35,7 +36,8 @@ class GierTest(unittest.TestCase):
         self.assertNotIn(f"{p}:", out)
         self.assertIn("0/def foo", out)
         self.assertIn("return 1", out)
-        self.assertTrue(out.rstrip().endswith("--"))
+        # a single finding has no separator line
+        self.assertNotIn("\n--\n", out)
 
     def test_multiple_files_auto_show_filename(self):
         p1 = self._write("a.py", "def foo():\n    return 1\n")
@@ -44,8 +46,9 @@ class GierTest(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertIn(f"{p1}:", out)
         self.assertIn(f"{p2}:", out)
-        # findings are separated by a blank line
-        self.assertIn("\n--\n\n", out)
+        # findings are separated by a single "--" line (no blank line)
+        self.assertIn("\n--\n", out)
+        self.assertNotIn("\n--\n\n", out)
 
     def test_no_filename_flag_overrides_multiple(self):
         p1 = self._write("a.py", "def foo():\n    return 1\n")
@@ -123,6 +126,12 @@ class GierTest(unittest.TestCase):
     def test_missing_literal_file_is_error(self):
         rc, out = self._run(["foo", os.path.join(self.dir, "does_not_exist.py")])
         self.assertEqual(rc, 2)
+
+    def test_multiline_flag_always_set(self):
+        self.assertTrue(cli._compile_pattern("x", False).flags & re.MULTILINE)
+        self.assertTrue(cli._compile_pattern("x", True).flags & re.MULTILINE)
+        self.assertTrue(cli._compile_pattern("x", True).flags & re.IGNORECASE)
+        self.assertFalse(cli._compile_pattern("x", False).flags & re.IGNORECASE)
 
     def test_invalid_pattern_is_error(self):
         p = self._write("a.py", "def foo():\n    return 1\n")
