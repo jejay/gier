@@ -61,6 +61,55 @@ from .core import analyze, analyze_blocks, block_path, effective_block, block_le
 from .output import format_blocks
 
 
+CHIER_HELP = """chier \u2014 Code HIERarchy
+Print a file's code-block structure as a single line, or query the block path
+to a given line. A structure-aware, token-friendly alternative to grep, built
+for coding agents and LLMs that need to know *where* code lives \u2014 not just
+that it exists.
+
+Usage:
+  chier PATH [PATH ...]
+  chier (-p|-c) LINE PATH
+
+Options:
+  -p, --path-query LINE     print the chain of nested blocks enclosing LINE
+  -c, --code-query LINE     like -p, but also print the block's source
+  -N, --min-block-length N  merge blocks shorter than N lines into their parent (default 5)
+  -M, --max-block-length N  collapse blocks longer than N lines to 'LINE:CODE' (default 99999)
+      --exclude-fp-objects  treat object/collection literals as objects, not blocks
+      --help                show this help and exit
+
+The language is detected from each file's extension. Exit status is non-zero
+if a file cannot be read or (for Python) fails to parse.
+"""
+
+
+GIER_HELP = """gier \u2014 Grep code HIERarchy
+Search files for a Python regular expression and, for every hit, print the
+enclosing block's structure. A smarter, structure-aware replacement for grep,
+tuned for agentic / LLM code inspection: each match comes with the function,
+method, or class it lives in. Matches outside any block (docstrings, imports,
+top-level code) fall back to classic grep output.
+
+Usage:
+  gier [-iHh] [-M N] [-N N] PATTERN FILE [.. [FILE]]
+
+Options:
+  -i, --ignore-case        case-insensitive match
+  -H, --with-filename      always prefix matches with FILE:
+  -h, --no-filename        never prefix (overrides -H and the auto rule)
+  -N, --min-block-length N merge blocks shorter than N lines into their parent (default 5)
+  -M, --max-block-length N collapse blocks longer than N lines to 'LINE:CODE' (default 20)
+      --help               show this help and exit
+
+FILE arguments are expanded with Python's glob (recursive=True), so '**/*.py'
+works; a literal path simply globs to itself. The file name is shown
+automatically when more than one file matches.
+
+Exit status: 0 if any match, 1 if none, 2 on error.
+"""
+
+
 # --------------------------------------------------------------------------- #
 # chier
 # --------------------------------------------------------------------------- #
@@ -183,6 +232,9 @@ def _code_for_line(blocks: list[tuple], source: str, query_line: int, min_length
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    if "--help" in argv:
+        print(CHIER_HELP)
+        return 0
     try:
         paths, path_query, code_query, min_length, max_length, allow_fp_objects = _parse_args(argv)
     except SystemExit as exc:
@@ -273,7 +325,7 @@ def _parse_gier_args(argv: list[str]) -> tuple[str, list[str], bool, bool, bool,
     with_filename = False
     no_filename = False
     min_length = 5
-    max_length = 99999
+    max_length = 20
     i = 0
     positional: list[str] = []
     while i < len(argv):
@@ -345,6 +397,9 @@ def _parse_gier_args(argv: list[str]) -> tuple[str, list[str], bool, bool, bool,
 
 def gier_main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    if "--help" in argv:
+        print(GIER_HELP)
+        return 0
     try:
         pattern, files, ignore_case, with_filename, no_filename, min_length, max_length = _parse_gier_args(argv)
     except SystemExit as exc:

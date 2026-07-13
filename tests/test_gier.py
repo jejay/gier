@@ -101,6 +101,19 @@ class GierTest(unittest.TestCase):
         self.assertIn("return a", out)
         self.assertNotIn("3:", out)
 
+    def test_default_max_block_length_is_20(self):
+        # gier collapses blocks longer than 20 lines by default (token-friendly
+        # for agents); an explicit large -M restores the full block.
+        src = "def big():\n" + "\n".join(f"    x{i} = {i}" for i in range(25)) + "\n"
+        p = self._write("a.py", src)
+        rc, out = self._run(["x0 = 0", p])
+        self.assertEqual(rc, 0)
+        self.assertIn("2:", out)  # collapsed to a single 'LINE:CODE'
+        self.assertNotIn("x24 = 24", out)
+        rc, out = self._run(["-M", "99999", "x0 = 0", p])
+        self.assertEqual(rc, 0)
+        self.assertIn("x24 = 24", out)  # full block shown again
+
     def test_glob_pattern_expands(self):
         self._write("a.py", "def foo():\n    return 1\n")
         self._write("sub/b.py", "def bar():\n    return 2\n")
