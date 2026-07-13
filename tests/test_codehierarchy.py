@@ -1,7 +1,7 @@
-"""Extensive tests for ``codehierarchy``.
+"""Extensive tests for ``gier``.
 
-These exercise both the library helpers in ``codehierarchy.core`` and the
-command-line interface (``codehierarchy.__main__.main``), using real-world
+These exercise both the library helpers in ``gier.core`` and the
+command-line interface (``gier.__main__.main``), using real-world
 source files cloned under ``test-repos/``. Tests that need a cloned repo are
 skipped when that repo is absent, so the suite stays green without it.
 
@@ -16,8 +16,8 @@ import os
 import re
 import unittest
 
-from codehierarchy import core
-from codehierarchy import __main__ as cli
+from gier import core
+from gier import __main__ as cli
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SAMPLE = os.path.join(REPO_ROOT, "sample.py")

@@ -19,7 +19,7 @@ import re
 import unittest
 from pathlib import Path
 
-from codehierarchy import core
+from gier import core
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEST_REPOS = os.path.join(REPO_ROOT, "test-repos")

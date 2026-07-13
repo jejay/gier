@@ -1,4 +1,4 @@
-"""Language dispatch for ``codehierarchy``.
+"""Language dispatch for ``gier``.
 
 ``analyze`` detects the language from the file extension (or an explicit
 ``--language`` override) and forwards to the appropriate analyzer:

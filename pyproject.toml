@@ -1,14 +1,14 @@
 [project]
-name = "codehierarchy"
+name = "gier"
 version = "0.1.0"
-description = "Recognize the code-block structure of a Python file as a single line."
+description = "gier: grep with code-block hierarchy awareness; chier is its companion for whole-file hierarchy queries."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
 
 [project.scripts]
-chier = "codehierarchy.__main__:chier_cli"
-gier = "codehierarchy.__main__:gier_cli"
+chier = "gier.__main__:chier_cli"
+gier = "gier.__main__:gier_cli"
 
 [build-system]
 requires = ["uv_build>=0.11.25,<0.12.0"]

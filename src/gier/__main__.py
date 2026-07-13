@@ -1,9 +1,9 @@
-"""Command-line interface for ``codehierarchy``.
+"""Command-line interface for ``gier``.
 
 This module provides two commands:
 
 ``chier`` -- Code HIERarchy. Recognizes the code-block hierarchy of source
-files and prints it as a single line (see ``codehierarchy.output``). A trailing
+files and prints it as a single line (see ``gier.output``). A trailing
 newline is always emitted.
 
 ``gier`` -- Grep code HIERarchy. Instead of querying a line number, it matches

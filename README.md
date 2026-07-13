@@ -1,14 +1,13 @@
-# chier & gier
+# gier — grep with code block hierarchy awareness
 
-**`gier` is grep with code block hierarchy awareness.** `chier` is its small companion.
+**gier is grep with code block hierarchy awareness.** `chier` is its small companion.
 
-`gier` and `chier` are KISS command-line tools that tell you *which code block*
-a piece of code lives in — the enclosing function, class, and control flow —
-instead of just a bare line like plain `grep`. They are built agentic-first
-(for coding agents and LLMs that need structural context), yet human-friendly
-enough to use by hand. `gier` is the main tool; `chier` is the companion you
-reach for when you want the whole-file hierarchy or a direct "what encloses
-line N?" query.
+`gier` is a KISS command-line tool that tells you *which code block* a piece of
+code lives in — the enclosing function, class, and control flow — instead of
+just a bare line like plain `grep`. It is built agentic-first (for coding
+agents and LLMs that need structural context), yet human-friendly enough to use
+by hand. `chier` is the companion you reach for when you want the whole-file
+hierarchy or a direct "what encloses line N?" query.
 
 Both detect the language from the file extension and understand Python,
 C, C++, Java, Kotlin, JavaScript, TypeScript, C#, Go, Rust, Swift, Scala,
@@ -57,25 +56,6 @@ and a sibling `for` (line 52); then we ascend back to the top level for another
 `if` (line 63). The whole description is exactly one line — one tidy record per
 file, or per match — which is what makes it easy for an agent to parse.
 
-## chier — Code HIERarchy
-
-```bash
-uv run chier PATH [PATH ...]
-uv run chier (-p|-c) LINE PATH
-```
-
-* `-p LINE` / `--path-query LINE` — print the chain of nested blocks enclosing
-  `LINE` (root first, `>`-separated).
-* `-c LINE` / `--code-query LINE` — like `-p`, plus the block's source.
-* `-N N` / `--min-block-length N` (default `5`) — blocks shorter than `N` lines
-  merge into their parent, so you get the enclosing scope, not a one-liner.
-* `-M N` / `--max-block-length N` (default `99999`) — blocks longer than `N`
-  lines collapse to a single `LINE:CODE` line.
-* `--exclude-fp-objects` — by default a `{` after `= : , [ return` is treated as
-  a block (capturing closures that look like object literals); pass this to
-  revert to the stricter heuristic.
-* `--help` — show usage.
-
 ## gier — Grep code HIERarchy
 
 ```bash
@@ -106,10 +86,29 @@ the globs resolve to more than one file. Findings are separated by a `--` line
 (only between findings, never after the last). Exit status: `0` match, `1` none,
 `2` error.
 
+## chier — Code HIERarchy
+
+```bash
+uv run chier PATH [PATH ...]
+uv run chier (-p|-c) LINE PATH
+```
+
+* `-p LINE` / `--path-query LINE` — print the chain of nested blocks enclosing
+  `LINE` (root first, `>`-separated).
+* `-c LINE` / `--code-query LINE` — like `-p`, plus the block's source.
+* `-N N` / `--min-block-length N` (default `5`) — blocks shorter than `N` lines
+  merge into their parent, so you get the enclosing scope, not a one-liner.
+* `-M N` / `--max-block-length N` (default `99999`) — blocks longer than `N`
+  lines collapse to a single `LINE:CODE` line.
+* `--exclude-fp-objects` — by default a `{` after `= : , [ return` is treated as
+  a block (capturing closures that look like object literals); pass this to
+  revert to the stricter heuristic.
+* `--help` — show usage.
+
 ## Library use
 
 ```python
-from codehierarchy import analyze
+from gier import analyze
 
 description = analyze(open("file.c").read(), path="file.c")
 ```

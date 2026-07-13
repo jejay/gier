@@ -5,7 +5,7 @@ import re
 import tempfile
 import unittest
 
-from codehierarchy import __main__ as cli
+from gier import __main__ as cli
 
 
 class GierTest(unittest.TestCase):
