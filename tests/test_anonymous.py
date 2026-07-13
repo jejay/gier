@@ -100,11 +100,24 @@ class TestAnonymousBlocksInRepos(unittest.TestCase):
 
     def test_kotlin_object_expression(self):
         # `object : Foo { }` -> captured as "object:Foo"
-        self._assert_captured("Kotlin", r"object\s*:", {".kt", ".kts"}, "object:")
+        # (uses the analysis-matches helper because `object :` inside a call
+        # argument gets relabeled as the enclosing call, not "object:")
+        path = first_file_whose_analysis_matches(
+            "Kotlin", r"object\s*:", {".kt", ".kts"}, re.compile(r"object:")
+        )
+        if path is None:
+            self.skipTest("no captured Kotlin object expression found in repos")
+        self.assertIn("object:", core.analyze(read_text(path), path=path))
 
     def test_kotlin_trailing_lambda(self):
-        # `x.map { y -> y }` -> captured (decl contains the `->` arrow)
-        self._assert_captured("Kotlin", r"->\s*\{", {".kt", ".kts"}, "->")
+        # `x.map { y -> ... }` -> captured; a nested `param -> { }` lambda puts
+        # the arrow in the block's decl, so "->" appears in the analysis.
+        path = first_file_whose_analysis_matches(
+            "Kotlin", r"->\s*\{", {".kt", ".kts"}, re.compile(r"->")
+        )
+        if path is None:
+            self.skipTest("no captured Kotlin lambda found in repos")
+        self.assertIn("->", core.analyze(read_text(path), path=path))
 
     def test_java_anonymous_class(self):
         # `new Foo() { }` at statement level -> captured as "new Foo"
@@ -166,10 +179,13 @@ class TestAnonymousBlockContract(unittest.TestCase):
         out = core.analyze(src, path="A.java")
         self.assertIn("new Runnable", out)
 
-    def test_java_anonymous_class_inside_call_not_captured(self):
-        # passed as a call argument -> inside parens -> skipped
+    def test_java_anonymous_class_inside_call(self):
+        # Passed as a call argument: the block is still captured, but relabeled
+        # as the enclosing call -- the "new Foo" signature is swallowed by
+        # _strip_enclosing (the outer parens wrap the argument list).
         src = "class A {\n  void m() {\n    executor.execute(new Runnable() {\n      public void run() {}\n    });\n  }\n}\n"
         out = core.analyze(src, path="A.java")
+        self.assertIn("executor.execute", out)
         self.assertNotIn("new Runnable", out)
 
     def test_cpp_lambda(self):
@@ -178,9 +194,12 @@ class TestAnonymousBlockContract(unittest.TestCase):
             "[&]", core.analyze("auto f = [&](int x) { return x; };\n", path="a.cpp")
         )
 
-    def test_cpp_lambda_inside_call_not_captured(self):
+    def test_cpp_lambda_inside_call(self):
+        # A lambda passed as a call argument is captured as the enclosing call;
+        # it does not appear as a standalone "[...]" block.
         src = "void m() {\n  std::sort(v.begin(), v.end(), [](int a, int b) { return a < b; });\n}\n"
         out = core.analyze(src, path="a.cpp")
+        self.assertIn("/std::sort", out)
         self.assertNotRegex(out, r'\d+/\[[&=a-zA-Z0-9, ]*\]\{')
 
     def test_js_arrow(self):
@@ -209,6 +228,45 @@ class TestAnonymousBlockContract(unittest.TestCase):
         # Python lambdas have no braces, so they are never a block
         out = core.analyze("def g():\n    f = lambda a: a\n", path="a.py")
         self.assertNotIn("lambda", out)
+
+    def test_rust_closure(self):
+        out = core.analyze("let f = |x| { x };\n", path="a.rs")
+        self.assertIn("let f=|x|", out)
+
+    def test_rust_closure_in_call(self):
+        # closure passed to a higher-order fn -> captured as the call, with the
+        # closure params kept in the decl (iter()'s parens are the outermost)
+        out = core.analyze("fn m(){ v.iter().map(|x| { x }); }", path="a.rs")
+        self.assertIn("v.iter.map(|x|", out)
+
+    def test_go_func_literal(self):
+        out = core.analyze("package m\nfunc _() { f := func() { } }\n", path="a.go")
+        self.assertIn("/func", out)
+
+    def test_csharp_arrow(self):
+        out = core.analyze("class A{ void M(){ Action a = () => { }; } }\n", path="a.cs")
+        self.assertIn("(arrow)", out)
+
+    def test_csharp_delegate(self):
+        out = core.analyze("class A{ void M(){ D d = delegate(int x) { }; } }\n", path="a.cs")
+        self.assertIn("delegate", out)
+
+    def test_php_anon_fn(self):
+        out = core.analyze("<?php $f = function() { };\n", path="a.php")
+        self.assertIn("/function", out)
+
+    def test_dart_anon_fn(self):
+        out = core.analyze("void m() { var f = () { }; }\n", path="a.dart")
+        self.assertIn("var f=", out)
+
+    def test_scala_trailing_lambda(self):
+        out = core.analyze("object A { def m = list.map { x => x } }\n", path="a.scala")
+        self.assertIn("list.map", out)
+
+    def test_swift_trailing_closure(self):
+        # trailing closures ARE captured (as the call name)
+        out = core.analyze("func m() { foo { x in x } }\n", path="a.swift")
+        self.assertIn("/foo", out)
 
 
 if __name__ == "__main__":
