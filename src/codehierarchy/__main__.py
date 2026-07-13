@@ -157,14 +157,16 @@ def _parse_int(flag: str, value: str) -> int:
     return n
 
 
-def _code_for_line(blocks: list[tuple], source: str, query_line: int, min_length: int, max_length: int) -> tuple[str, list[str]]:
-    """Return ``(block_path_str, code_lines)`` for a ``chier -c``-style query.
+def _code_for_line(blocks: list[tuple], source: str, query_line: int, min_length: int, max_length: int) -> tuple[str, list[str], bool]:
+    """Return ``(block_path_str, code_lines, in_block)`` for a ``chier -c``-style query.
 
     Shared by ``chier`` (code query) and ``gier``. ``block_path_str`` is the
     ancestry chain (root first) of the block containing ``query_line``, merged
     past blocks shorter than ``min_length``. ``code_lines`` are the source
     lines of that block, or -- when the block is longer than ``max_length`` --
-    a single ``[line-number]:[code line]`` line.
+    a single ``[line-number]:[code line]`` line. ``in_block`` is ``False`` when
+    ``query_line`` is not enclosed by any block (e.g. a module-level docstring
+    or import), so the caller can skip such matches.
     """
     path_blocks, target = effective_block(blocks, query_line, min_length)
     code: list[str] = []
@@ -176,7 +178,7 @@ def _code_for_line(blocks: list[tuple], source: str, query_line: int, min_length
         if code and block_len(target) > max_length:
             q = query_line - 1
             code = [f"{query_line}:{lines[q]}"] if 0 <= q < len(lines) else []
-    return format_blocks(path_blocks), code
+    return format_blocks(path_blocks), code, target is not None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -217,7 +219,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if code_query is not None:
-        block_path_str, code = _code_for_line(blocks, source, query_line, min_length, max_length)
+        block_path_str, code, _ = _code_for_line(blocks, source, query_line, min_length, max_length)
         sys.stdout.write(block_path_str + "\n")
         if code:
             sys.stdout.write("\n".join(code) + "\n")
@@ -396,7 +398,12 @@ def gier_main(argv: list[str] | None = None) -> int:
         lines = source.splitlines()
         for lineno, line in enumerate(lines, start=1):
             if regex.search(line):
-                block_path_str, code = _code_for_line(blocks, source, lineno, min_length, max_length)
+                block_path_str, code, in_block = _code_for_line(blocks, source, lineno, min_length, max_length)
+                if not in_block:
+                    # The match is outside any block (e.g. a module-level
+                    # docstring or import); there is no enclosing block to
+                    # report, so skip it rather than emitting an empty finding.
+                    continue
                 prefix = f"{path}:" if show_name else ""
                 findings.append(f"{prefix}{block_path_str}\n" + "\n".join(code) + "\n")
                 rc = 0

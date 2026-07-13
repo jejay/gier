@@ -127,6 +127,24 @@ class GierTest(unittest.TestCase):
         rc, out = self._run(["foo", os.path.join(self.dir, "does_not_exist.py")])
         self.assertEqual(rc, 2)
 
+    def test_match_outside_any_block_is_skipped(self):
+        # "level" appears in the module docstring (no enclosing block) and
+        # inside a function (enclosed). Only the in-block match is reported.
+        src = '"""level mentioned at module level"""\n\n\ndef f():\n    level = 1\n    return level\n'
+        p = self._write("a.py", src)
+        rc, out = self._run(["level", p])
+        self.assertEqual(rc, 0)
+        self.assertIn("0/def f", out)
+        self.assertNotIn("mentioned at module level", out)
+
+    def test_match_with_no_blocks_reports_nothing(self):
+        # A file with no blocks at all yields no findings for an outside match.
+        src = "# level only at top level\nx = 1\n"
+        p = self._write("a.py", src)
+        rc, out = self._run(["level", p])
+        self.assertEqual(rc, 1)
+        self.assertEqual(out, "")
+
     def test_multiline_flag_always_set(self):
         self.assertTrue(cli._compile_pattern("x", False).flags & re.MULTILINE)
         self.assertTrue(cli._compile_pattern("x", True).flags & re.MULTILINE)
