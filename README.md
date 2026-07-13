@@ -179,6 +179,12 @@ one, and only when there is more than one finding, so a single match has no
 separator at all. The `<block path>` is the `chier` block-path line; `<code>`
 is the enclosing block's source (or, under `-M`, a single `line:code` line).
 
+A match that is not inside any block (a module-level docstring, import, or
+other top-level statement) has no enclosing block to report, so it falls back
+to classic grep output: a single `path:line:code` line (`line:code` without
+the name when `-h` applies). Both styles share the same `--` separator and the
+same filename rules.
+
 Exit status: `0` if any match was found, `1` if none, `2` on error (bad
 pattern, missing file, unreadable file).
 

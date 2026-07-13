@@ -398,14 +398,18 @@ def gier_main(argv: list[str] | None = None) -> int:
         lines = source.splitlines()
         for lineno, line in enumerate(lines, start=1):
             if regex.search(line):
-                block_path_str, code, in_block = _code_for_line(blocks, source, lineno, min_length, max_length)
-                if not in_block:
-                    # The match is outside any block (e.g. a module-level
-                    # docstring or import); there is no enclosing block to
-                    # report, so skip it rather than emitting an empty finding.
-                    continue
                 prefix = f"{path}:" if show_name else ""
-                findings.append(f"{prefix}{block_path_str}\n" + "\n".join(code) + "\n")
+                block_path_str, code, in_block = _code_for_line(blocks, source, lineno, min_length, max_length)
+                if in_block:
+                    finding = f"{prefix}{block_path_str}\n" + "\n".join(code) + "\n"
+                else:
+                    # No enclosing block (e.g. a module-level docstring or
+                    # import): fall back to classic grep output, one
+                    # "path:line:code" line. The file name follows -h/-H and
+                    # the number of files found, exactly like the block
+                    # findings.
+                    finding = f"{prefix}{lineno}:{line}\n"
+                findings.append(finding)
                 rc = 0
 
     if findings:
