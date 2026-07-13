@@ -218,39 +218,42 @@ class TestAnonymousBlockContract(unittest.TestCase):
         out = core.analyze("namespace {\n  void f() {}\n}\n", path="a.cpp")
         self.assertIn("/namespace", out)
 
-    def test_swift_assigned_closure_not_captured(self):
-        # `let f = { ... }` looks like an object literal to the heuristic
-        # ('=' then '{'), so it is skipped
+    def test_default_treats_swift_closure_as_block(self):
+        # The default now treats object-looking `{` as a block, so the Swift
+        # closure is captured (decl "f=").
         out = core.analyze("let f = { x in x }\n", path="a.swift")
+        self.assertIn("f=", out)
+
+    def test_exclude_fp_objects_reverts_to_old_behavior(self):
+        # --exclude-fp-objects (allow_fp_objects=False) restores the old
+        # reject-object-literals behavior: the Swift closure is skipped.
+        out = core.analyze("let f = { x in x }\n", path="a.swift", allow_fp_objects=False)
         self.assertEqual(out.strip(), "")
 
-    def test_fpobjects_captures_swift_assigned_closure(self):
-        # With --fpobjects the ambiguous `= {` is treated as a block, so the
-        # Swift closure is captured (decl "f=").
-        off = core.analyze("let f = { x in x }\n", path="a.swift", allow_fp_objects=False)
-        on = core.analyze("let f = { x in x }\n", path="a.swift", allow_fp_objects=True)
-        self.assertEqual(off.strip(), "")
-        self.assertIn("f=", on)
+    def test_default_captures_switch_case_block(self):
+        # `case X: { ... }` is captured by default (decl "case").
+        src = "switch (x) {\n  case 1: { foo(); }\n}\n"
+        out = core.analyze(src, path="a.js")
+        self.assertIn("/case", out)
 
-    def test_fpobjects_captures_switch_case_block(self):
-        # `case X: { ... }` is currently missed (`: {` rejected); with the flag
-        # it is captured as a block (decl "case").
+    def test_exclude_fp_objects_skips_switch_case_block(self):
         src = "switch (x) {\n  case 1: { foo(); }\n}\n"
         off = core.analyze(src, path="a.js", allow_fp_objects=False)
-        on = core.analyze(src, path="a.js", allow_fp_objects=True)
         self.assertNotIn("/case", off)
-        self.assertIn("/case", on)
 
-    def test_fpobjects_object_literal_false_positive(self):
-        # A real object literal `const o = { a: 1 }` is captured with the flag
-        # too -- that is the accepted false positive.
+    def test_default_captures_object_literal_false_positive(self):
+        # A real object literal `const o = { a: 1 }` is captured by default too
+        # -- that is the accepted false positive.
+        src = "const o = { a: 1, b: 2 };\n"
+        out = core.analyze(src, path="a.js")
+        self.assertIn("const o=", out)
+
+    def test_exclude_fp_objects_skips_object_literal(self):
         src = "const o = { a: 1, b: 2 };\n"
         off = core.analyze(src, path="a.js", allow_fp_objects=False)
-        on = core.analyze(src, path="a.js", allow_fp_objects=True)
         self.assertNotIn("const o=", off)
-        self.assertIn("const o=", on)
 
-    def test_fpobjects_is_noop_for_python(self):
+    def test_exclude_fp_objects_is_noop_for_python(self):
         out_off = core.analyze("def g():\n    f = lambda a: a\n", path="a.py", allow_fp_objects=False)
         out_on = core.analyze("def g():\n    f = lambda a: a\n", path="a.py", allow_fp_objects=True)
         self.assertEqual(out_off, out_on)

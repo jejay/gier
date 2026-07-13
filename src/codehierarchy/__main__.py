@@ -28,11 +28,12 @@ For ``-c`` two length filters apply:
   lines are not printed verbatim; their source is collapsed to one
   ``[line-number]:[code line]`` per line.
 
-``--fpobjects`` relaxes the object-literal heuristic: a ``{`` after ``=``,
-``:``, ``,``, ``[`` or ``return`` is treated as a block even though it may be
-an object/collection literal. This catches inline functions that look like
-object literals (e.g. Swift closures, switch-case blocks) at the cost of some
-false-positive objects.
+By default a ``{`` after ``=``, ``:``, ``,``, ``[`` or ``return`` is treated
+as a block even though it may be an object/collection literal -- this catches
+inline functions that look like object literals (e.g. Swift closures,
+switch-case blocks) at the cost of some false-positive objects. Pass
+``--exclude-fp-objects`` to revert to the stricter heuristic that rejects
+those object/collection literals.
 """
 
 import sys
@@ -47,7 +48,7 @@ def _parse_args(argv: list[str]) -> tuple[list[str], int | None, int | None, int
     code_query: int | None = None
     min_length: int = 5
     max_length: int = 99999
-    allow_fp_objects: bool = False
+    allow_fp_objects: bool = True
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -75,8 +76,8 @@ def _parse_args(argv: list[str]) -> tuple[list[str], int | None, int | None, int
             max_length = _parse_int("--max-block-length/-M", argv[i + 1])
             i += 2
             continue
-        if a in ("--fpobjects",):
-            allow_fp_objects = True
+        if a in ("--exclude-fp-objects",):
+            allow_fp_objects = False
             i += 1
             continue
         if a.startswith("--path-query="):
@@ -95,8 +96,8 @@ def _parse_args(argv: list[str]) -> tuple[list[str], int | None, int | None, int
             max_length = _parse_int("--max-block-length", a.split("=", 1)[1])
             i += 1
             continue
-        if a.startswith("--fpobjects="):
-            allow_fp_objects = _parse_bool("--fpobjects", a.split("=", 1)[1])
+        if a.startswith("--exclude-fp-objects="):
+            allow_fp_objects = not _parse_bool("--exclude-fp-objects", a.split("=", 1)[1])
             i += 1
             continue
         paths.append(a)

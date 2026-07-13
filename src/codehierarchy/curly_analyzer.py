@@ -216,20 +216,23 @@ def _compute_decl(core_texts: list[str]) -> str:
 
 
 # Tokens that, when immediately before a ``{``, signal an object/collection
-# initializer rather than a code block. With ``allow_fp_objects`` we accept the
-# ambiguity (treating the ``{`` as a block) to also capture inline functions
-# that look like object literals -- at the cost of some false-positive objects.
+# initializer rather than a code block. By default we accept the ambiguity
+# (treating the ``{`` as a block) to also capture inline functions that look
+# like object literals -- at the cost of some false-positive objects. Pass
+# ``allow_fp_objects=False`` to restore the stricter behavior that rejects
+# those object/collection literals.
 OBJECT_STARTERS = ("=", ":", ",", "[", "return")
 
 
-def _is_block(core_texts: list[str], prev_text: str | None, allow_fp_objects: bool = False) -> tuple[bool, bool]:
+def _is_block(core_texts: list[str], prev_text: str | None, allow_fp_objects: bool = True) -> tuple[bool, bool]:
     """Return ``(is_block, is_arrow)``.
 
-    Object/collection initializers (``= {``, ``: {``, ``, {``, ``[ {``,
-    ``return {``) are rejected. When ``allow_fp_objects`` is set we no longer
-    reject those -- a ``{`` in such a position cannot be told apart from an
-    anonymous function, so we prefer to capture it (accepting that some real
-    object literals will then be reported as blocks).
+    By default (``allow_fp_objects=True``) a ``{`` after ``=``, ``:``, ``,``,
+    ``[`` or ``return`` is treated as a block even though it may be an
+    object/collection literal -- this also catches inline functions that look
+    like object literals (e.g. Swift closures, switch-case blocks). Pass
+    ``allow_fp_objects=False`` to restore the stricter behavior that rejects
+    those object/collection literals.
 
     A plain ``=> {`` arrow function is accepted and flagged as an arrow block;
     ``=> ({`` (arrow returning an object literal) stays rejected.
@@ -251,7 +254,7 @@ def _is_block(core_texts: list[str], prev_text: str | None, allow_fp_objects: bo
 # --------------------------------------------------------------------------
 # Analyzer
 # --------------------------------------------------------------------------
-def curly_blocks(source: str, language: str | None = None, allow_fp_objects: bool = False) -> list[tuple]:
+def curly_blocks(source: str, language: str | None = None, allow_fp_objects: bool = True) -> list[tuple]:
     raw = tokenize(source)
     toks = [t for t in raw if t[3] != "skip"]
     n = len(toks)
