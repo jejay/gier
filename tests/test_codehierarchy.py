@@ -23,8 +23,8 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SAMPLE = os.path.join(REPO_ROOT, "sample.py")
 TEST_REPOS = os.path.join(REPO_ROOT, "test-repos")
 
-# One block entry in a path line: ``(marker)level:decl{s,c~e,c}``.
-BLOCK_RE = re.compile(r"([><|]*?)(\d+)/(.+?)\{(\d+),(\d+)~(\d+),(\d+)\}")
+# One block entry in a path line: ``(marker)[level]decl{s,c~e,c}``.
+BLOCK_RE = re.compile(r"([><|]*?)\[(\d+)\](.+?)\{(\d+),(\d+)~(\d+),(\d+)\}")
 
 
 def parse_path(line: str) -> list[dict]:
@@ -137,7 +137,7 @@ class TestCliRegression(unittest.TestCase):
         self.assertEqual(out.count("\n"), 1)
         self.assertEqual(
             out,
-            "0/def abcd{21,1~61,20}>1/if{46,5~48,16}|1/for{52,5~59,18}<0/if{63,1~69,13}\n",
+            "[0]def abcd{21,1~61,20}>[1]if{46,5~48,16}|[1]for{52,5~59,18}<[0]if{63,1~69,13}\n",
         )
 
     def test_no_args(self):
@@ -226,20 +226,20 @@ class TestCodeQuery(unittest.TestCase):
 
         # path must match the library-computed effective path
         expected_blocks, target = core.effective_block(blocks, line, min_length)
-        self.assertEqual(path_line, core.format_blocks(expected_blocks))
-
-        # the code section must correspond to the innermost reported block
+        base_path = core.format_blocks(expected_blocks)
         block = parsed[-1]
         s, e = block["start_line"], block["end_line"]
         file_lines = src.splitlines()
-        section = code_section(out)
         length = e - s + 1
+        section = code_section(out)
         if length > max_length:
-            # fallback: only the queried line, with its number
-            expected = [f"{line}:{file_lines[line - 1]}"]
+            # Collapsed by -M: squashed onto the path line as
+            # "blockpath:line:code" with no separate code section.
+            self.assertEqual(path_line, f"{base_path}:{line}:{file_lines[line - 1]}")
+            self.assertEqual(section, [])
         else:
-            expected = file_lines[s - 1 : e]
-        self.assertEqual(section, expected)
+            self.assertEqual(path_line, base_path)
+            self.assertEqual(section, file_lines[s - 1 : e])
 
     def test_sample_default_merges_short(self):
         # default N=5: the 3-line if is merged into def abcd

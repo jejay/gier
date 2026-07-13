@@ -122,19 +122,19 @@ class TestAnonymousBlocksInRepos(unittest.TestCase):
     def test_java_anonymous_class(self):
         # `new Foo() { }` at statement level -> captured as "new Foo"
         path = first_file_whose_analysis_matches(
-            "Java", r"new\s+\w+\(\)\s*\{", {".java"}, re.compile(r"\d+/new ")
+            "Java", r"new\s+\w+\(\)\s*\{", {".java"}, re.compile(r"\[\d+\]new ")
         )
         if path is None:
             self.skipTest("no captured Java anonymous class found in repos")
-        self.assertIn("/new ", core.analyze(read_text(path), path=path))
+        self.assertRegex(core.analyze(read_text(path), path=path), r"\[\d+\]new ")
 
     def test_c_anonymous_struct(self):
         # `struct { ... } s;` -> captured as "struct"
-        self._assert_captured("C", r"struct\s*\{", {".c", ".h"}, "/struct")
+        self._assert_captured("C", r"struct\s*\{", {".c", ".h"}, "[0]struct")
 
     def test_cpp_anonymous_namespace(self):
         # `namespace { ... }` -> captured as "namespace"
-        self._assert_captured("C++", r"namespace\s*\{", {".cc", ".cpp", ".cxx", ".hpp", ".hh"}, "/namespace")
+        self._assert_captured("C++", r"namespace\s*\{", {".cc", ".cpp", ".cxx", ".hpp", ".hh"}, "[0]namespace")
 
     def test_js_arrow_function(self):
         # `() => { }` -> captured as "(arrow)"
@@ -142,7 +142,7 @@ class TestAnonymousBlocksInRepos(unittest.TestCase):
 
     def test_js_function_expression(self):
         # `const f = function() { }` -> captured (decl contains "function")
-        self._assert_captured("JavaScript", r"=\s*function\s*\(", {".js", ".ts", ".mjs", ".cjs"}, "/function")
+        self._assert_captured("JavaScript", r"=\s*function\s*\(", {".js", ".ts", ".mjs", ".cjs"}, "[0]function")
 
     def test_cpp_lambda(self):
         # an assigned lambda `auto f = [](){}` -> captured as "[...]"
@@ -199,7 +199,7 @@ class TestAnonymousBlockContract(unittest.TestCase):
         # it does not appear as a standalone "[...]" block.
         src = "void m() {\n  std::sort(v.begin(), v.end(), [](int a, int b) { return a < b; });\n}\n"
         out = core.analyze(src, path="a.cpp")
-        self.assertIn("/std::sort", out)
+        self.assertRegex(out, r"\[\d+\]std::sort")
         self.assertNotRegex(out, r'\d+/\[[&=a-zA-Z0-9, ]*\]\{')
 
     def test_js_arrow(self):
@@ -212,11 +212,11 @@ class TestAnonymousBlockContract(unittest.TestCase):
 
     def test_c_anonymous_struct(self):
         out = core.analyze("struct { int x; } s;\n", path="a.c")
-        self.assertIn("/struct", out)
+        self.assertIn("[0]struct", out)
 
     def test_cpp_anonymous_namespace(self):
         out = core.analyze("namespace {\n  void f() {}\n}\n", path="a.cpp")
-        self.assertIn("/namespace", out)
+        self.assertIn("[0]namespace", out)
 
     def test_default_treats_swift_closure_as_block(self):
         # The default now treats object-looking `{` as a block, so the Swift
@@ -234,12 +234,12 @@ class TestAnonymousBlockContract(unittest.TestCase):
         # `case X: { ... }` is captured by default (decl "case").
         src = "switch (x) {\n  case 1: { foo(); }\n}\n"
         out = core.analyze(src, path="a.js")
-        self.assertIn("/case", out)
+        self.assertRegex(out, r"\[\d+\]case")
 
     def test_exclude_fp_objects_skips_switch_case_block(self):
         src = "switch (x) {\n  case 1: { foo(); }\n}\n"
         off = core.analyze(src, path="a.js", allow_fp_objects=False)
-        self.assertNotIn("/case", off)
+        self.assertNotIn("[0]case", off)
 
     def test_default_captures_object_literal_false_positive(self):
         # A real object literal `const o = { a: 1 }` is captured by default too
@@ -275,7 +275,7 @@ class TestAnonymousBlockContract(unittest.TestCase):
 
     def test_go_func_literal(self):
         out = core.analyze("package m\nfunc _() { f := func() { } }\n", path="a.go")
-        self.assertIn("/func", out)
+        self.assertIn("[0]func", out)
 
     def test_csharp_arrow(self):
         out = core.analyze("class A{ void M(){ Action a = () => { }; } }\n", path="a.cs")
@@ -287,7 +287,7 @@ class TestAnonymousBlockContract(unittest.TestCase):
 
     def test_php_anon_fn(self):
         out = core.analyze("<?php $f = function() { };\n", path="a.php")
-        self.assertIn("/function", out)
+        self.assertIn("[0]function", out)
 
     def test_dart_anon_fn(self):
         out = core.analyze("void m() { var f = () { }; }\n", path="a.dart")
@@ -300,7 +300,7 @@ class TestAnonymousBlockContract(unittest.TestCase):
     def test_swift_trailing_closure(self):
         # trailing closures ARE captured (as the call name)
         out = core.analyze("func m() { foo { x in x } }\n", path="a.swift")
-        self.assertIn("/foo", out)
+        self.assertRegex(out, r"\[\d+\]foo")
 
 
 if __name__ == "__main__":

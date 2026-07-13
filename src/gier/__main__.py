@@ -105,6 +105,10 @@ Options:
   -M, --max-block-length N collapse blocks longer than N lines to 'LINE:CODE' (default 20)
       --color[=WHEN]        color the matched text; WHEN is auto (default),
                             always, or never
+      --format[=FMT]        output format (default md); md wraps each block's
+                            source in a fenced code block with no separator
+                            between findings, plain keeps the classic '--'
+                            separator and prints source unfenced
       --help               show this help and exit
 
 FILE arguments are expanded with Python's glob (recursive=True), so '**/*.py'
@@ -201,6 +205,16 @@ def _parse_bool(flag: str, value: str) -> bool:
     raise SystemExit(f"{flag} requires a boolean (true/false)")
 
 
+_FORMATS = ("md", "plain")
+
+
+def _parse_format(flag: str, value: str) -> str:
+    v = value.strip().lower()
+    if v in _FORMATS:
+        return v
+    raise SystemExit(f"{flag} must be one of {', '.join(_FORMATS)} (got {value!r})")
+
+
 def _parse_int(flag: str, value: str) -> int:
     try:
         n = int(value)
@@ -261,6 +275,64 @@ def _code_for_line(blocks: list[tuple], source: str, query_line: int, min_length
     return format_blocks(path_blocks), code, target is not None, target
 
 
+def _common_leading_indent(lines: list[str]) -> str:
+    """Longest whitespace prefix shared by every non-blank line.
+
+    Blank (whitespace-only) lines are ignored, so an interior blank line does
+    not stop a block from being dedented. The result is itself whitespace-only.
+    """
+    wss: list[str] = []
+    for ln in lines:
+        if ln.strip() == "":
+            continue
+        i = 0
+        while i < len(ln) and ln[i] in " \t":
+            i += 1
+        wss.append(ln[:i])
+    if not wss:
+        return ""
+    common = wss[0]
+    for ws in wss[1:]:
+        n = min(len(common), len(ws))
+        k = 0
+        while k < n and common[k] == ws[k]:
+            k += 1
+        common = common[:k]
+    return common
+
+
+def _format_md_code_block(code: list[str], source: str) -> str:
+    """Wrap ``code`` in a markdown fence, dedenting a common leading indent.
+
+    Only multi-line blocks (more than one source line) are dedented. The
+    removed indentation is reported in the opening fence -- e.g.
+    `` ```4 spaces unindented `` or `` ```1 tab unindented `` -- so that
+    copy/search operations on the shortened block still line up with the real
+    source. Pure-space and pure-tab indentation are handled; a mixed or absent
+    common indent is left untouched. CRLF line endings from ``source`` are
+    preserved.
+    """
+    ending = "\r\n" if "\r\n" in source else "\n"
+    if len(code) <= 1:
+        # single line of source: not a multi-line block, leave as-is
+        return f"```{ending}{ending.join(code)}{ending}```"
+    indent = _common_leading_indent(code)
+    if not indent:
+        return f"```{ending}{ending.join(code)}{ending}```"
+    has_space = " " in indent
+    has_tab = "\t" in indent
+    if has_space and has_tab:
+        # Mixed space/tab indent: only pure space / pure tab is handled.
+        return f"```{ending}{ending.join(code)}{ending}```"
+    n = len(indent)
+    if has_space:
+        note = f"{n} space{'s' if n != 1 else ''} unindented"
+    else:
+        note = f"{n} tab{'s' if n != 1 else ''} unindented"
+    dedented = [(ln[len(indent):] if ln.startswith(indent) else ln) for ln in code]
+    return f"```{note}{ending}{ending.join(dedented)}{ending}```"
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if "--help" in argv:
@@ -302,10 +374,16 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if code_query is not None:
-        block_path_str, code, _, _ = _code_for_line(blocks, source, query_line, min_length, max_length)
-        sys.stdout.write(block_path_str + "\n")
-        if code:
-            sys.stdout.write("\n".join(code) + "\n")
+        block_path_str, code, _, target = _code_for_line(blocks, source, query_line, min_length, max_length)
+        collapsed = target is not None and block_len(target) > max_length
+        if collapsed and code:
+            # Collapsed by -M: squash onto a single line as blockpath:line:code
+            # (no fence, no separate code section).
+            sys.stdout.write(f"{block_path_str}:{code[0]}\n")
+        else:
+            sys.stdout.write(block_path_str + "\n")
+            if code:
+                sys.stdout.write("\n".join(code) + "\n")
         return 0
 
     # Path-only query.
@@ -351,13 +429,14 @@ def _compile_pattern(pattern: str, ignore_case: bool) -> "re.Pattern":
     return re.compile(pattern, flags)
 
 
-def _parse_gier_args(argv: list[str]) -> tuple[str, list[str], bool, bool, bool, int, int, str]:
+def _parse_gier_args(argv: list[str]) -> tuple[str, list[str], bool, bool, bool, int, int, str, str]:
     ignore_case = False
     with_filename = False
     no_filename = False
     min_length = 5
     max_length = 20
     color_mode = "auto"
+    fmt = "md"  # default: markdown code ticks, no '--' separator between findings
     i = 0
     positional: list[str] = []
     while i < len(argv):
@@ -384,6 +463,13 @@ def _parse_gier_args(argv: list[str]) -> tuple[str, list[str], bool, bool, bool,
                 min_length = _parse_int("--min-block-length", a.split("=", 1)[1])
             elif a.startswith("--max-block-length="):
                 max_length = _parse_int("--max-block-length", a.split("=", 1)[1])
+            elif a in ("--format", "--colour-format"):
+                if i + 1 >= len(argv):
+                    raise SystemExit(f"{a} requires a value ({'/'.join(_FORMATS)})")
+                fmt = _parse_format(a, argv[i + 1])
+                i += 1
+            elif a.startswith("--format=") or a.startswith("--colour-format="):
+                fmt = _parse_format("--format", a.split("=", 1)[1])
             elif a in ("--color", "--colour"):
                 color_mode = "always"  # bare --color behaves like --color=always
             elif a.startswith("--color=") or a.startswith("--colour="):
@@ -433,7 +519,7 @@ def _parse_gier_args(argv: list[str]) -> tuple[str, list[str], bool, bool, bool,
     if len(positional) < 2:
         raise SystemExit("usage: gier [-iHh] [-M N] [-N N] PATTERN FILE [.. [FILE]]")
     pattern, files = positional[0], positional[1:]
-    return pattern, files, ignore_case, with_filename, no_filename, min_length, max_length, color_mode
+    return pattern, files, ignore_case, with_filename, no_filename, min_length, max_length, color_mode, fmt
 
 
 def gier_main(argv: list[str] | None = None) -> int:
@@ -442,7 +528,7 @@ def gier_main(argv: list[str] | None = None) -> int:
         print(GIER_HELP)
         return 0
     try:
-        pattern, files, ignore_case, with_filename, no_filename, min_length, max_length, color_mode = _parse_gier_args(argv)
+        pattern, files, ignore_case, with_filename, no_filename, min_length, max_length, color_mode, fmt = _parse_gier_args(argv)
     except SystemExit as exc:
         print(f"gier: {exc}", file=sys.stderr)
         return 2
@@ -507,15 +593,32 @@ def gier_main(argv: list[str] | None = None) -> int:
                 )
                 matched = colorize_match(line, regex) if color_on else line
                 if in_block:
+                    collapsed = target is not None and block_len(target) > max_length
                     if color_on:
-                        if target is not None and block_len(target) > max_length:
+                        if collapsed:
                             # Block collapsed to a single "LINE:CODE" record.
                             code = [f"{lineno}:{matched}"]
                         else:
                             idx = lineno - target[0]
                             if 0 <= idx < len(code):
                                 code = code[:idx] + [matched] + code[idx + 1:]
-                    finding = f"{prefix}{block_path_str}\n" + "\n".join(code) + "\n"
+                    if collapsed:
+                        # Collapsed by -M: squash onto a single line as
+                        # blockpath:line:code -- no fence, no separator. This
+                        # applies in every format variant.
+                        finding = f"{prefix}{block_path_str}:{code[0]}\n"
+                    else:
+                        if fmt == "md":
+                            # Markdown format: wrap the block's source in a
+                            # fenced code block, dedenting any common leading
+                            # indent (reported in the opening fence so
+                            # copy/search still line up). The file name is
+                            # never fenced (it is just a plain grep line when a
+                            # match falls outside any block).
+                            source_block = _format_md_code_block(code, source)
+                        else:
+                            source_block = "\n".join(code)
+                        finding = f"{prefix}{block_path_str}\n{source_block}\n"
                 else:
                     # No enclosing block (e.g. a module-level docstring or
                     # import): fall back to classic grep output, one
@@ -527,10 +630,16 @@ def gier_main(argv: list[str] | None = None) -> int:
                 rc = 0
 
     if findings:
-        # The "--" separator is printed only *between* findings (never after the
-        # last one), and only when there is more than one finding, so a single
-        # match has no separator at all.
-        out = "".join(f + "--\n" for f in findings[:-1]) + findings[-1]
+        if fmt == "md":
+            # Markdown format: no inter-finding separator -- each block's
+            # source is its own fenced code block, which delimits findings.
+            out = "".join(findings)
+        else:
+            # Plain format: findings are separated by a "--" line (only
+            # *between* findings, never after the last one), and only when
+            # there is more than one finding, so a single match has no
+            # separator at all.
+            out = "".join(f + "--\n" for f in findings[:-1]) + findings[-1]
         sys.stdout.write(out)
     return 2 if had_error else rc
 

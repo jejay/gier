@@ -4,9 +4,10 @@ Given a list of blocks, each ``(start_line, start_col, level, decl,
 end_line, end_col)`` with 1-based columns, render the single-line description
 used by every analyzer:
 
-    <level>:<decl>{<start_line>,<start_col>~<end_line>,<end_col>}
+    [<level>]<decl>{<start_line>,<start_col>~<end_line>,<end_col>}
 
-Blocks are ordered by source position and separated by relative indentation
+The nesting ``<level>`` is wrapped in square brackets and followed directly by
+the ``<decl>``. Blocks are ordered by source position and separated by relative indentation
 markers (``>`` child, ``|`` sibling, ``<`` ascended levels).
 """
 
@@ -32,7 +33,7 @@ def format_blocks(blocks: list[tuple]) -> str:
             marker = "<" * (prev_level - level)
         else:  # level > prev_level (only ever by 1 in well-formed code)
             marker = ">" * (level - prev_level)
-        parts.append(f"{marker}{level}/{decl}{{{start_line},{start_col}~{end_line},{end_col}}}")
+        parts.append(f"{marker}[{level}]{decl}{{{start_line},{start_col}~{end_line},{end_col}}}")
         prev_level = level
 
     return "".join(parts)
