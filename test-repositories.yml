@@ -1,42 +1,89 @@
 Kotlin:
-  - https://github.com/meshtastic/Meshtastic-Android
-  - https://github.com/signalapp/Signal-Android
-  - https://github.com/samyak2403/RepoStore
+  - url: https://github.com/meshtastic/Meshtastic-Android
+    commit: 9005fb712973fc7cfef421515f393a833643585d
+  - url: https://github.com/signalapp/Signal-Android
+    commit: c47a74ba0961903eeaeda6d22347a990056c3e83
+  - url: https://github.com/samyak2403/RepoStore
+    commit: bcbdee958a84c08db637497c56447277b4e00231
 
 Java:
-  - https://github.com/Anuken/Mindustry
-  - https://github.com/kestra-io/kestra
-  - https://github.com/dataease/dataease
+  - url: https://github.com/Anuken/Mindustry
+    commit: 0d92ef53ecef6ff5f97e27e5c7a7291615d3340c
+  - url: https://github.com/kestra-io/kestra
+    commit: 2f63c5b9789bf0e375a87b78a334f55cb70ced1d
+  - url: https://github.com/dataease/dataease
+    commit: 82637220d69aa370eeea161c6dbc89332cda502e
 
 C:
-  - https://github.com/apache/httpd
-  - https://github.com/madler/zlib
-  - https://github.com/FreeRTOS/FreeRTOS-Kernel
-  - https://github.com/libgit2/libgit2
+  - url: https://github.com/apache/httpd
+    commit: 51ada736d3fbe5b12e90a531f486086dbafe8c12
+  - url: https://github.com/madler/zlib
+    commit: e3dc0a85b7032e98380dec011bc8f2c2ee0d8fca
+  - url: https://github.com/FreeRTOS/FreeRTOS-Kernel
+    commit: 9db704cd3bbe4963f9bd3de1f1161ea2cf90768b
+  - url: https://github.com/libgit2/libgit2
+    commit: 32b564e63f9639eaf5ee90fb7a95b3a650156cbd
 
 C++:
-  - https://github.com/zeux/meshoptimizer
-  - https://github.com/bitcoin/bitcoin
-  - https://github.com/jrouwe/JoltPhysics
-  - https://github.com/ocornut/imgui
-  - https://github.com/godotengine/godot
-  - https://github.com/nlohmann/json
-  - https://github.com/duckdb/duckdb
-  - https://github.com/facebookresearch/faiss
-  - https://github.com/google/leveldb
+  - url: https://github.com/zeux/meshoptimizer
+    commit: 441ff309c04559e7438234aa7b5424755b0c7ed6
+  - url: https://github.com/bitcoin/bitcoin
+    commit: c8459b6bdcdf077f1e7aba0ec2cb806cd0907457
+  - url: https://github.com/jrouwe/JoltPhysics
+    commit: d8f2c99a208ef942cc1ca62e32a398c3a491db16
+  - url: https://github.com/ocornut/imgui
+    commit: b62bfd6b06de958e4630b715225b7e8409bfd0f9
+  - url: https://github.com/godotengine/godot
+    commit: 2c089e9bf0b8712d0bc444c2ceaf9c543ed9c777
+  - url: https://github.com/nlohmann/json
+    commit: 722c03495f9978eb727f480b6ea0742f652e06a9
+  - url: https://github.com/duckdb/duckdb
+    commit: 2009475939c7b5ada2e55cc74843339bd9be79e3
+  - url: https://github.com/facebookresearch/faiss
+    commit: 63378f0ace9771397e6d3474e66317fb96a97c71
+  - url: https://github.com/google/leveldb
+    commit: 7ee830d02b623e8ffe0b95d59a74db1e58da04c5
 
 JavaScript:
-  - https://github.com/expressjs/express
-  - https://github.com/webtorrent/webtorrent
-  - https://github.com/mochajs/mocha
-  - https://github.com/fastify/fastify
-  - https://github.com/sveltejs/svelte
-  - https://github.com/naptha/tesseract.js
-  - https://github.com/openclaw/openclaw
-  - https://github.com/immich-app/immich
+  - url: https://github.com/expressjs/express
+    commit: ba006766fb964571723138708eacaba0f55759cd
+  - url: https://github.com/webtorrent/webtorrent
+    commit: 6d636c6d4e4578743ea28a135ada7243ad0d2608
+  - url: https://github.com/mochajs/mocha
+    commit: 7ad398ebf14e4a9255984338619907bf485d6a17
+  - url: https://github.com/fastify/fastify
+    commit: 6682c4f9a76cbb60c372ba5cad9dd2fc6e2fdb51
+  - url: https://github.com/sveltejs/svelte
+    commit: b4d1583ae20f3869a88a731d9a265c546c099f66
+  - url: https://github.com/naptha/tesseract.js
+    commit: a1ca80d9e31c34512d0ded75ff8821ddcf3f2f91
+  - url: https://github.com/openclaw/openclaw
+    commit: 71a10846df5f9799e6f558727eb431af6c877d88
+  - url: https://github.com/immich-app/immich
+    commit: 557189d7a8c182b3f4271bb31db2228f3844b68b
 
 Python:
-  - https://github.com/home-assistant/core
-  - https://github.com/yt-dlp/yt-dlp
-  - https://github.com/ijl/orjson
-  - https://github.com/jazzband/tablib
+  - url: https://github.com/home-assistant/core
+    commit: 23ab6efce288396320368c4d680c431349358013
+  - url: https://github.com/yt-dlp/yt-dlp
+    commit: 6a188aed91fb0a1b9d62f20377015b8fd2c69762
+  - url: https://github.com/ijl/orjson
+    commit: 705515d77b28429d0b7c30c3d781abe52e8a1e5a
+  - url: https://github.com/jazzband/tablib
+    commit: bfecdaad292fb7020d841eab3fcbc67d26cfa6bc
+
+Rust:
+  - url: https://github.com/RustPython/RustPython
+    commit: a9c2c529b14199a7ae7893b9d82c8bebe6b17418
+  - url: https://github.com/influxdata/influxdb
+    commit: d7834110b3680ba8e53d16333d158b18b8847bc7
+  - url: https://github.com/tursodatabase/turso
+    commit: 709920c500560e7e64ff982c6e5fe8325981bab8
+  - url: https://github.com/nushell/nushell
+    commit: d4c072470ade62d6b75dd2bb5f6ef1192e260152
+
+CSharp:
+  - url: https://github.com/netchx/netch
+    commit: 9d99eb1c5a2acbf2a34f2600f94242601019a300
+  - url: https://github.com/dotnet/aspnetcore
+    commit: f82669acc283a66b046dc4fbd39b65c08ed72488
