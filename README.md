@@ -33,7 +33,7 @@ works against the principle. Prefer a clear heuristic over a clever one.
 ## Output format
 
 ```
-<level>:<decl>{<start_line>,<start_col>~<end_line>,<end_col>}
+<level>/<decl>{<start_line>,<start_col>~<end_line>,<end_col>}
 ```
 
 Blocks are emitted in source order and separated by a relative indentation
@@ -53,7 +53,7 @@ Given a file whose `def abcd` starts at line 21, an `if` (child) at line 46,
 a `for` (sibling) at line 52, and another top-level `if` at line 63:
 
 ```
-0:def abcd{21,1~61,20}>1:if{46,5~48,16}|1:for{52,5~59,18}<0:if{63,1~69,13}
+0/def abcd{21,1~61,20}>1/if{46,5~48,16}|1/for{52,5~59,18}<0/if{63,1~69,13}
 ```
 
 See `sample.py` for a file that reproduces exactly this output.
@@ -71,7 +71,7 @@ int main() {
 ```
 
 ```
-0:int main{1,1~5,1}>1:if{2,5~4,3}>2:for{3,9~4,3}
+0/int main{1,1~5,1}>1/if{2,5~4,3}>2/for{3,9~4,3}
 ```
 
 ## Supported languages

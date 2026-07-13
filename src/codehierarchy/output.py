@@ -32,7 +32,7 @@ def format_blocks(blocks: list[tuple]) -> str:
             marker = "<" * (prev_level - level)
         else:  # level > prev_level (only ever by 1 in well-formed code)
             marker = ">" * (level - prev_level)
-        parts.append(f"{marker}{level}:{decl}{{{start_line},{start_col}~{end_line},{end_col}}}")
+        parts.append(f"{marker}{level}/{decl}{{{start_line},{start_col}~{end_line},{end_col}}}")
         prev_level = level
 
     return "".join(parts)

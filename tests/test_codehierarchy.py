@@ -24,7 +24,7 @@ SAMPLE = os.path.join(REPO_ROOT, "sample.py")
 TEST_REPOS = os.path.join(REPO_ROOT, "test-repos")
 
 # One block entry in a path line: ``(marker)level:decl{s,c~e,c}``.
-BLOCK_RE = re.compile(r"([><|]*?)(\d+):(.+?)\{(\d+),(\d+)~(\d+),(\d+)\}")
+BLOCK_RE = re.compile(r"([><|]*?)(\d+)/(.+?)\{(\d+),(\d+)~(\d+),(\d+)\}")
 
 
 def parse_path(line: str) -> list[dict]:
@@ -137,7 +137,7 @@ class TestCliRegression(unittest.TestCase):
         self.assertEqual(out.count("\n"), 1)
         self.assertEqual(
             out,
-            "0:def abcd{21,1~61,20}>1:if{46,5~48,16}|1:for{52,5~59,18}<0:if{63,1~69,13}\n",
+            "0/def abcd{21,1~61,20}>1/if{46,5~48,16}|1/for{52,5~59,18}<0/if{63,1~69,13}\n",
         )
 
     def test_no_args(self):
