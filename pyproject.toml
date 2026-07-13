@@ -7,7 +7,8 @@ requires-python = ">=3.10"
 dependencies = []
 
 [project.scripts]
-codehierarchy = "codehierarchy.__main__:main"
+chier = "codehierarchy.__main__:chier_cli"
+gier = "codehierarchy.__main__:gier_cli"
 
 [build-system]
 requires = ["uv_build>=0.11.25,<0.12.0"]

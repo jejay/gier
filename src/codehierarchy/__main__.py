@@ -1,13 +1,19 @@
 """Command-line interface for ``codehierarchy``.
 
-Usage
------
-    python -m codehierarchy PATH [PATH ...]
-    python -m codehierarchy (-p|-c) LINE PATH
+This module provides two commands:
 
-Reads one or more files and prints, for each, a single line describing its
-block structure (see ``codehierarchy.output``). A trailing newline is always
-emitted.
+``chier`` -- Code HIERarchy. Recognizes the code-block structure of source
+files and prints it as a single line (see ``codehierarchy.output``). A trailing
+newline is always emitted.
+
+``gier`` -- Grep code HIERarchy. Instead of querying a line number, it matches
+a regular expression against the file's lines and, for each match, prints the
+enclosing block structure in the style of a ``chier`` code query.
+
+chier
+-----
+    uv run chier PATH [PATH ...]
+    uv run chier (-p|-c) LINE PATH
 
 The language is detected from each file's extension (unknown extensions
 default to Python). The tool operates on files; standard input is not read.
@@ -16,7 +22,7 @@ Query options take a 1-based ``LINE`` number:
 
 * ``-p``/``--path-query``  -- print the chain of nested blocks (root first,
   separated by ``>``) that enclose that line.
-* ``-c``/``--code-query``  -- like ``-b``, but also print the source of the
+* ``-c``/``--code-query``  -- like ``-p``, but also print the source of the
   innermost enclosing block afterwards.
 
 For ``-c`` two length filters apply:
@@ -34,13 +40,30 @@ inline functions that look like object literals (e.g. Swift closures,
 switch-case blocks) at the cost of some false-positive objects. Pass
 ``--exclude-fp-objects`` to revert to the stricter heuristic that rejects
 those object/collection literals.
+
+gier
+----
+    uv run gier [-iHh] [-M N] [-N N] PATTERN FILE [.. [FILE]]
+
+For each FILE (expanded with ``glob.glob(..., recursive=True)``; the Python
+glob syntax such as ``**/*.py`` is supported) every line matching PATTERN
+yields a finding: the enclosing block path plus the block's source, formatted
+exactly like a ``chier -c`` query. ``-i``/``-H``/``-h`` act like in GNU grep;
+``-N``/``-M`` filter the code block as in ``chier``.
 """
 
+import glob
+import os
+import re
 import sys
 
 from .core import analyze, analyze_blocks, block_path, effective_block, block_len
 from .output import format_blocks
 
+
+# --------------------------------------------------------------------------- #
+# chier
+# --------------------------------------------------------------------------- #
 
 def _parse_args(argv: list[str]) -> tuple[list[str], int | None, int | None, int, int, bool]:
     paths: list[str] = []
@@ -134,21 +157,43 @@ def _parse_int(flag: str, value: str) -> int:
     return n
 
 
+def _code_for_line(blocks: list[tuple], source: str, query_line: int, min_length: int, max_length: int) -> tuple[str, list[str]]:
+    """Return ``(block_path_str, code_lines)`` for a ``chier -c``-style query.
+
+    Shared by ``chier`` (code query) and ``gier``. ``block_path_str`` is the
+    ancestry chain (root first) of the block containing ``query_line``, merged
+    past blocks shorter than ``min_length``. ``code_lines`` are the source
+    lines of that block, or -- when the block is longer than ``max_length`` --
+    a single ``[line-number]:[code line]`` line.
+    """
+    path_blocks, target = effective_block(blocks, query_line, min_length)
+    code: list[str] = []
+    if target is not None:
+        lines = source.splitlines()
+        lo = target[0] - 1
+        hi = min(target[4], len(lines))
+        code = lines[lo:hi]
+        if code and block_len(target) > max_length:
+            q = query_line - 1
+            code = [f"{query_line}:{lines[q]}"] if 0 <= q < len(lines) else []
+    return format_blocks(path_blocks), code
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     try:
         paths, path_query, code_query, min_length, max_length, allow_fp_objects = _parse_args(argv)
     except SystemExit as exc:
-        print(f"codehierarchy: {exc}", file=sys.stderr)
+        print(f"chier: {exc}", file=sys.stderr)
         return 2
 
     if not paths:
-        print("codehierarchy: no input file given", file=sys.stderr)
+        print("chier: no input file given", file=sys.stderr)
         return 2
 
     if path_query is not None and code_query is not None:
         print(
-            "codehierarchy: use at most one of -p/--path-query, -c/--code-query",
+            "chier: use at most one of -p/--path-query, -c/--code-query",
             file=sys.stderr,
         )
         return 2
@@ -163,30 +208,19 @@ def main(argv: list[str] | None = None) -> int:
         with open(path, "r", encoding="utf-8") as fh:
             source = fh.read()
     except OSError as exc:
-        print(f"codehierarchy: cannot read {path}: {exc}", file=sys.stderr)
+        print(f"chier: cannot read {path}: {exc}", file=sys.stderr)
         return 1
     try:
         blocks = analyze_blocks(source, path=path, allow_fp_objects=allow_fp_objects)
     except SyntaxError as exc:
-        print(f"codehierarchy: syntax error in {path}: {exc}", file=sys.stderr)
+        print(f"chier: syntax error in {path}: {exc}", file=sys.stderr)
         return 1
 
     if code_query is not None:
-        path_blocks, target = effective_block(blocks, query_line, min_length)
-        sys.stdout.write(format_blocks(path_blocks) + "\n")
-        if target is not None:
-            lines = source.splitlines()
-            lo = target[0] - 1
-            hi = min(target[4], len(lines))
-            code = lines[lo:hi]
-            if code:
-                if block_len(target) > max_length:
-                    # Fallback: the block overflows the threshold, so print only
-                    # the queried line (with its number) instead of the full
-                    # block source.
-                    q = query_line - 1
-                    code = [f"{query_line}:{lines[q]}"] if 0 <= q < len(lines) else []
-                sys.stdout.write("\n".join(code) + "\n")
+        block_path_str, code = _code_for_line(blocks, source, query_line, min_length, max_length)
+        sys.stdout.write(block_path_str + "\n")
+        if code:
+            sys.stdout.write("\n".join(code) + "\n")
         return 0
 
     # Path-only query.
@@ -202,16 +236,190 @@ def _run_normal(paths: list[str], allow_fp_objects: bool = False) -> int:
             with open(path, "r", encoding="utf-8") as fh:
                 source = fh.read()
         except OSError as exc:
-            print(f"codehierarchy: cannot read {path}: {exc}", file=sys.stderr)
+            print(f"chier: cannot read {path}: {exc}", file=sys.stderr)
             rc = 1
             continue
         try:
             sys.stdout.write(analyze(source, path=path, allow_fp_objects=allow_fp_objects) + "\n")
         except SyntaxError as exc:
-            print(f"codehierarchy: syntax error in {path}: {exc}", file=sys.stderr)
+            print(f"chier: syntax error in {path}: {exc}", file=sys.stderr)
             rc = 1
     return rc
 
 
+# --------------------------------------------------------------------------- #
+# gier
+# --------------------------------------------------------------------------- #
+
+def _is_glob(pattern: str) -> bool:
+    """Whether ``pattern`` uses Python glob syntax (so an empty match is fine)."""
+    return any(c in "*?[" for c in pattern)
+
+
+def _parse_gier_args(argv: list[str]) -> tuple[str, list[str], bool, bool, bool, int, int]:
+    ignore_case = False
+    with_filename = False
+    no_filename = False
+    min_length = 5
+    max_length = 99999
+    i = 0
+    positional: list[str] = []
+    while i < len(argv):
+        a = argv[i]
+        if a == "--":
+            positional = argv[i + 1:]
+            break
+        if a.startswith("--"):
+            if a == "--ignore-case":
+                ignore_case = True
+            elif a == "--with-filename":
+                with_filename = True
+            elif a == "--no-filename":
+                no_filename = True
+            elif a in ("--min-block-length", "--max-block-length"):
+                if i + 1 >= len(argv):
+                    raise SystemExit(f"{a} requires a number")
+                if a == "--min-block-length":
+                    min_length = _parse_int(a, argv[i + 1])
+                else:
+                    max_length = _parse_int(a, argv[i + 1])
+                i += 1
+            elif a.startswith("--min-block-length="):
+                min_length = _parse_int("--min-block-length", a.split("=", 1)[1])
+            elif a.startswith("--max-block-length="):
+                max_length = _parse_int("--max-block-length", a.split("=", 1)[1])
+            else:
+                raise SystemExit(f"unknown option {a}")
+            i += 1
+            continue
+        if a.startswith("-") and a != "-":
+            # Short flags; boolean flags may be combined (e.g. -ih), and -M/-N
+            # may carry their value attached (-M3) or as the next argument.
+            j = 1
+            while j < len(a):
+                ch = a[j]
+                if ch == "i":
+                    ignore_case = True
+                elif ch == "H":
+                    with_filename = True
+                elif ch == "h":
+                    no_filename = True
+                elif ch in "MN":
+                    rest = a[j + 1:]
+                    if rest:
+                        val = rest
+                    else:
+                        if i + 1 >= len(argv):
+                            raise SystemExit(f"-{ch} requires a number")
+                        i += 1
+                        val = argv[i]
+                    if ch == "M":
+                        max_length = _parse_int(f"-{ch}", val)
+                    else:
+                        min_length = _parse_int(f"-{ch}", val)
+                    break
+                else:
+                    raise SystemExit(f"unknown option -{ch}")
+                j += 1
+            i += 1
+            continue
+        positional.append(a)
+        i += 1
+    if len(positional) < 2:
+        raise SystemExit("usage: gier [-iHh] [-M N] [-N N] PATTERN FILE [.. [FILE]]")
+    pattern, files = positional[0], positional[1:]
+    return pattern, files, ignore_case, with_filename, no_filename, min_length, max_length
+
+
+def gier_main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    try:
+        pattern, files, ignore_case, with_filename, no_filename, min_length, max_length = _parse_gier_args(argv)
+    except SystemExit as exc:
+        print(f"gier: {exc}", file=sys.stderr)
+        return 2
+
+    try:
+        regex = re.compile(pattern, re.IGNORECASE if ignore_case else 0)
+    except re.error as exc:
+        print(f"gier: invalid pattern: {exc}", file=sys.stderr)
+        return 2
+
+    # Each FILE is expanded with one recursive glob. A bare file path simply
+    # globs to itself; a glob pattern (e.g. ``**/*.py``) expands to all matches.
+    all_files: list[str] = []
+    for f in files:
+        matches = glob.glob(f, recursive=True)
+        if not matches and not _is_glob(f):
+            print(f"gier: {f}: No such file or directory", file=sys.stderr)
+            return 2
+        all_files.extend(matches)
+    if not all_files:
+        print("gier: no input files", file=sys.stderr)
+        return 2
+
+    if no_filename:
+        show_name = False
+    elif with_filename:
+        show_name = True
+    else:
+        # GNU grep behavior: show the file name when more than one file matched.
+        show_name = len(all_files) > 1
+
+    findings: list[str] = []
+    rc = 1
+    had_error = False
+    for path in all_files:
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                source = fh.read()
+        except (OSError, UnicodeDecodeError) as exc:
+            print(f"gier: {path}: {exc}", file=sys.stderr)
+            had_error = True
+            continue
+        try:
+            blocks = analyze_blocks(source, path=path)
+        except SyntaxError:
+            # Python source that fails to parse: report no block structure for
+            # this file rather than failing the whole run.
+            blocks = []
+        lines = source.splitlines()
+        for lineno, line in enumerate(lines, start=1):
+            if regex.search(line):
+                block_path_str, code = _code_for_line(blocks, source, lineno, min_length, max_length)
+                prefix = f"{path}:" if show_name else ""
+                findings.append(f"{prefix}{block_path_str}\n" + "\n".join(code) + "\n--\n")
+                rc = 0
+
+    if findings:
+        sys.stdout.write("\n".join(findings))
+    return 2 if had_error else rc
+
+
+def _devnull_stdout() -> None:
+    """Redirect stdout to /dev/null so a closed pipe does not crash on exit."""
+    try:
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+    except Exception:
+        pass
+
+
+def _cli_entry(fn) -> int:
+    try:
+        return fn()
+    except BrokenPipeError:
+        _devnull_stdout()
+        return 0
+
+
+def chier_cli() -> int:
+    return _cli_entry(main)
+
+
+def gier_cli() -> int:
+    return _cli_entry(gier_main)
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(chier_cli())

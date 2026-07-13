@@ -1,7 +1,13 @@
 # codehierarchy
 
 A small tool that recognizes the **code-block structure** of a source file and
-prints it as a single line.
+prints it as a single line. It ships two command-line tools, both backed by
+the same analysis:
+
+* **`chier`** (Code HIERarchy) — print a file's block structure, or query the
+  block path to a given line.
+* **`gier`** (Grep code HIERarchy) — match a regex across files and print the
+  enclosing block structure for every match.
 
 For every compound statement it reports:
 
@@ -94,23 +100,23 @@ control flow (`if`/`elif`/`else`/`for`/`while`/`switch`/`try`/`catch`/
 
 ```bash
 # analyze a file (one line printed per file); language from extension
-uv run codehierarchy file.py
-uv run codehierarchy file.c
+uv run chier file.py
+uv run chier file.c
 
 # multiple files
-uv run codehierarchy a.py b.c c.java
+uv run chier a.py b.c c.java
 
 # path query: chain of enclosing blocks ('>' only) to a line
-uv run codehierarchy -p 47 file.py
+uv run chier -p 47 file.py
 
 # code query: path plus the enclosing block's source
-uv run codehierarchy -c 47 file.py
+uv run chier -c 47 file.py
 
 # code query, ignoring blocks shorter than 10 lines (merge into parent)
-uv run codehierarchy -c 47 -N 10 file.py
+uv run chier -c 47 -N 10 file.py
 
 # code query, collapsing blocks longer than 3 lines to 'line:code'
-uv run codehierarchy -c 47 -M 3 file.py
+uv run chier -c 47 -M 3 file.py
 ```
 
 Exit status is non-zero if a file cannot be read or (for Python) contains a
@@ -133,6 +139,47 @@ Two length filters refine ``-c``:
   ``M`` lines is not printed verbatim; as a fallback only the queried line is
   printed, as ``[line-number]:[code line]`` (a single line indicating the
   block source overflows the threshold).
+
+## gier — grep by block structure
+
+`gier` combines a regex search (like GNU `grep`) with a `chier -c` query: for
+every line that matches `PATTERN`, it prints the enclosing block path plus the
+block's source.
+
+```bash
+uv run gier [-iHh] [-M N] [-N N] PATTERN FILE [.. [FILE]]
+```
+
+* `FILE` arguments are expanded with Python's `glob.glob(..., recursive=True)`,
+  so the full glob syntax works — e.g. `uv run gier "def " "src/**/*.py"`
+  searches every `.py` file under `src/`. A literal file path simply globs to
+  itself, so a list of files is expanded one by one and returns exactly those
+  files.
+* `-i` / `--ignore-case` — case-insensitive match (compiled with
+  `re.IGNORECASE`). Patterns are compiled Python regular expressions.
+* `-H` / `--with-filename` — always prefix each finding with `path:`.
+* `-h` / `--no-filename` — never prefix (overrides `-H` and the auto rule).
+* `-N` / `--min-block-length` (default `5`) and `-M` / `--max-block-length`
+  (default `99999`) filter the code block exactly as in `chier -c`.
+
+The file name is printed (as `path:`) when `-H` is given, or automatically when
+the combined globs resolve to more than one file (as in GNU `grep`). With a
+single file and no `-H`, only the block structure is shown.
+
+Each finding is formatted as:
+
+```
+[path:]<block path>
+<code>
+--
+```
+
+followed by a blank line before the next finding. The `<block path>` is the
+`chier` block-path line; `<code>` is the enclosing block's source (or, under
+`-M`, a single `line:code` line).
+
+Exit status: `0` if any match was found, `1` if none, `2` on error (bad
+pattern, missing file, unreadable file).
 
 ## Tests
 
