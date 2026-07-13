@@ -171,6 +171,52 @@ class GierTest(unittest.TestCase):
         rc, out = self._run(["(", p])
         self.assertEqual(rc, 2)
 
+    def test_color_always_wraps_only_the_match_text(self):
+        p = self._write("a.py", "def foo():\n    return 1\n")
+        rc, out = self._run(["--color=always", "foo", p])
+        self.assertEqual(rc, 0)
+        # the matched 'foo' is wrapped, and nothing else on the line is
+        self.assertIn("\x1b[1;31mfoo\x1b[0m", out)
+        # the block-path metadata is never colored
+        self.assertIn("0/def ", out)
+        self.assertNotIn("\x1b[1;31m0/def", out)
+
+    def test_color_never_emits_no_escape(self):
+        p = self._write("a.py", "def foo():\n    return 1\n")
+        rc, out = self._run(["--color=never", "foo", p])
+        self.assertEqual(rc, 0)
+        self.assertNotIn("\x1b", out)
+
+    def test_color_auto_is_off_when_stdout_is_not_a_tty(self):
+        # the harness captures stdout into a non-tty buffer, so 'auto' must
+        # behave like 'never' (no escape codes).
+        p = self._write("a.py", "def foo():\n    return 1\n")
+        rc, out = self._run(["--color=auto", "foo", p])
+        self.assertEqual(rc, 0)
+        self.assertNotIn("\x1b", out)
+
+    def test_color_default_is_auto(self):
+        # with no --color flag, behavior must equal --color=auto (off here)
+        p = self._write("a.py", "def foo():\n    return 1\n")
+        rc, out = self._run(["foo", p])
+        self.assertEqual(rc, 0)
+        self.assertNotIn("\x1b", out)
+
+    def test_color_invalid_value_is_error(self):
+        p = self._write("a.py", "def foo():\n    return 1\n")
+        rc, out = self._run(["--color=rainbow", "foo", p])
+        self.assertEqual(rc, 2)
+        self.assertIn("--color must be auto, always or never", out)
+
+    def test_color_always_colors_collapsed_block_line(self):
+        # with -M 1 the block collapses to a single 'LINE:CODE' record; the
+        # matched text inside that record must still be colored.
+        src = "def big():\n    a = 1\n    b = 2\n    return a\n"
+        p = self._write("a.py", src)
+        rc, out = self._run(["--color=always", "-M", "1", "b = 2", p])
+        self.assertEqual(rc, 0)
+        self.assertIn("\x1b[1;31mb = 2\x1b[0m", out)
+
 
 if __name__ == "__main__":
     unittest.main()

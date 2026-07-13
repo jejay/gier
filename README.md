@@ -91,6 +91,10 @@ Options:
 * `-N N` / `--min-block-length N` (default `5`) and `-M N` /
   `--max-block-length N` (default `20`) — filter the code block; `-M` defaults
   to `20` so big blocks stay compact for agents.
+* `--color[=WHEN]` (default `auto`) — highlight the matched text. `WHEN` is
+  `auto` (color only when stdout is an interactive terminal), `always`, or
+  `never`. Only the matched text is colored, never the filename, line number,
+  or block-path metadata.
 * `--help` — show usage.
 
 The file name is printed (as `path:`) when `-H` is given, or automatically when

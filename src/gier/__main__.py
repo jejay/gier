@@ -48,8 +48,9 @@ gier
 For each FILE (expanded with ``glob.glob(..., recursive=True)``; the Python
 glob syntax such as ``**/*.py`` is supported) every line matching PATTERN
 yields a finding: the enclosing block path plus the block's source, formatted
-exactly like a ``chier -c`` query. ``-i``/``-H``/``-h`` act like in GNU grep;
-``-N``/``-M`` filter the code block as in ``chier``.
+exactly like a ``chier -c`` query. ``-i``/``-H``/``-h`` act like in GNU grep; ``-N``/``-M`` filter the code
+block as in ``chier``; ``--color=auto|always|never`` highlights the matched
+text (``auto`` colors only when stdout is a terminal).
 """
 
 import glob
@@ -102,6 +103,8 @@ Options:
   -h, --no-filename        never prefix (overrides -H and the auto rule)
   -N, --min-block-length N merge blocks shorter than N lines into their parent (default 5)
   -M, --max-block-length N collapse blocks longer than N lines to 'LINE:CODE' (default 20)
+      --color[=WHEN]        color the matched text; WHEN is auto (default),
+                            always, or never
       --help               show this help and exit
 
 FILE arguments are expanded with Python's glob (recursive=True), so '**/*.py'
@@ -208,6 +211,32 @@ def _parse_int(flag: str, value: str) -> int:
     return n
 
 
+# ANSI SGR sequences used when --color highlights a match.
+ANSI_MATCH = "\x1b[1;31m"  # bold red, like GNU grep's default match color
+ANSI_RESET = "\x1b[0m"
+
+
+def colorize_match(text: str, regex: "re.Pattern") -> str:
+    """Wrap every regex match in ``text`` with the match-color ANSI codes.
+
+    Only the matched text is colored (never the filename, line number, or the
+    rest of the line), mirroring GNU grep's default behavior.
+    """
+    parts: list[str] = []
+    last = 0
+    for m in regex.finditer(text):
+        s, e = m.span()
+        if s == e:
+            continue  # ignore zero-width matches
+        parts.append(text[last:s])
+        parts.append(ANSI_MATCH)
+        parts.append(text[s:e])
+        parts.append(ANSI_RESET)
+        last = e
+    parts.append(text[last:])
+    return "".join(parts)
+
+
 def _code_for_line(blocks: list[tuple], source: str, query_line: int, min_length: int, max_length: int) -> tuple[str, list[str], bool]:
     """Return ``(block_path_str, code_lines, in_block)`` for a ``chier -c``-style query.
 
@@ -229,7 +258,7 @@ def _code_for_line(blocks: list[tuple], source: str, query_line: int, min_length
         if code and block_len(target) > max_length:
             q = query_line - 1
             code = [f"{query_line}:{lines[q]}"] if 0 <= q < len(lines) else []
-    return format_blocks(path_blocks), code, target is not None
+    return format_blocks(path_blocks), code, target is not None, target
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -273,7 +302,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if code_query is not None:
-        block_path_str, code, _ = _code_for_line(blocks, source, query_line, min_length, max_length)
+        block_path_str, code, _, _ = _code_for_line(blocks, source, query_line, min_length, max_length)
         sys.stdout.write(block_path_str + "\n")
         if code:
             sys.stdout.write("\n".join(code) + "\n")
@@ -322,12 +351,13 @@ def _compile_pattern(pattern: str, ignore_case: bool) -> "re.Pattern":
     return re.compile(pattern, flags)
 
 
-def _parse_gier_args(argv: list[str]) -> tuple[str, list[str], bool, bool, bool, int, int]:
+def _parse_gier_args(argv: list[str]) -> tuple[str, list[str], bool, bool, bool, int, int, str]:
     ignore_case = False
     with_filename = False
     no_filename = False
     min_length = 5
     max_length = 20
+    color_mode = "auto"
     i = 0
     positional: list[str] = []
     while i < len(argv):
@@ -354,6 +384,15 @@ def _parse_gier_args(argv: list[str]) -> tuple[str, list[str], bool, bool, bool,
                 min_length = _parse_int("--min-block-length", a.split("=", 1)[1])
             elif a.startswith("--max-block-length="):
                 max_length = _parse_int("--max-block-length", a.split("=", 1)[1])
+            elif a in ("--color", "--colour"):
+                color_mode = "always"  # bare --color behaves like --color=always
+            elif a.startswith("--color=") or a.startswith("--colour="):
+                val = a.split("=", 1)[1]
+                if val not in ("auto", "always", "never"):
+                    raise SystemExit(
+                        f"gier: --color must be auto, always or never (got {val!r})"
+                    )
+                color_mode = val
             else:
                 raise SystemExit(f"unknown option {a}")
             i += 1
@@ -394,7 +433,7 @@ def _parse_gier_args(argv: list[str]) -> tuple[str, list[str], bool, bool, bool,
     if len(positional) < 2:
         raise SystemExit("usage: gier [-iHh] [-M N] [-N N] PATTERN FILE [.. [FILE]]")
     pattern, files = positional[0], positional[1:]
-    return pattern, files, ignore_case, with_filename, no_filename, min_length, max_length
+    return pattern, files, ignore_case, with_filename, no_filename, min_length, max_length, color_mode
 
 
 def gier_main(argv: list[str] | None = None) -> int:
@@ -403,10 +442,17 @@ def gier_main(argv: list[str] | None = None) -> int:
         print(GIER_HELP)
         return 0
     try:
-        pattern, files, ignore_case, with_filename, no_filename, min_length, max_length = _parse_gier_args(argv)
+        pattern, files, ignore_case, with_filename, no_filename, min_length, max_length, color_mode = _parse_gier_args(argv)
     except SystemExit as exc:
         print(f"gier: {exc}", file=sys.stderr)
         return 2
+
+    if color_mode == "always":
+        color_on = True
+    elif color_mode == "never":
+        color_on = False
+    else:  # "auto": color only when writing to an interactive terminal
+        color_on = sys.stdout.isatty()
 
     try:
         regex = _compile_pattern(pattern, ignore_case)
@@ -456,8 +502,19 @@ def gier_main(argv: list[str] | None = None) -> int:
         for lineno, line in enumerate(lines, start=1):
             if regex.search(line):
                 prefix = f"{path}:" if show_name else ""
-                block_path_str, code, in_block = _code_for_line(blocks, source, lineno, min_length, max_length)
+                block_path_str, code, in_block, target = _code_for_line(
+                    blocks, source, lineno, min_length, max_length
+                )
+                matched = colorize_match(line, regex) if color_on else line
                 if in_block:
+                    if color_on:
+                        if target is not None and block_len(target) > max_length:
+                            # Block collapsed to a single "LINE:CODE" record.
+                            code = [f"{lineno}:{matched}"]
+                        else:
+                            idx = lineno - target[0]
+                            if 0 <= idx < len(code):
+                                code = code[:idx] + [matched] + code[idx + 1:]
                     finding = f"{prefix}{block_path_str}\n" + "\n".join(code) + "\n"
                 else:
                     # No enclosing block (e.g. a module-level docstring or
@@ -465,7 +522,7 @@ def gier_main(argv: list[str] | None = None) -> int:
                     # "path:line:code" line. The file name follows -h/-H and
                     # the number of files found, exactly like the block
                     # findings.
-                    finding = f"{prefix}{lineno}:{line}\n"
+                    finding = f"{prefix}{lineno}:{matched}\n"
                 findings.append(finding)
                 rc = 0
 
