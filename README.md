@@ -100,13 +100,48 @@ uv run codehierarchy file.c
 # multiple files
 uv run codehierarchy a.py b.c c.java
 
-# block path to a given line (chain of enclosing blocks, '>' only)
-uv run codehierarchy -s 47 file.py
-uv run codehierarchy -l 47 file.py   # -l also prints the enclosing block's source
+# path query: chain of enclosing blocks ('>' only) to a line
+uv run codehierarchy -p 47 file.py
+
+# code query: path plus the enclosing block's source
+uv run codehierarchy -c 47 file.py
+
+# code query, ignoring blocks shorter than 10 lines (merge into parent)
+uv run codehierarchy -c 47 -N 10 file.py
+
+# code query, collapsing blocks longer than 3 lines to 'line:code'
+uv run codehierarchy -c 47 -M 3 file.py
 ```
 
 Exit status is non-zero if a file cannot be read or (for Python) contains a
 syntax error.
+
+## Query options
+
+``-p LINE`` / ``--path-query LINE`` and ``-c LINE`` / ``--code-query LINE`` take
+a 1-based ``LINE`` number and print the chain of nested blocks (root first,
+separated only by ``>``) that enclose that line -- i.e. the block path to the
+deepest block containing it, with no siblings or ascents. ``-c`` additionally
+prints the source of the innermost enclosing block on the following lines.
+
+Two length filters refine ``-c``:
+
+* ``-N`` / ``--min-block-length`` (default ``5``) -- a block shorter than
+  ``N`` lines is not reported on its own; it is merged into its parent, so the
+  parent's path and source (which include the small block) are shown instead.
+* ``-M`` / ``--max-block-length`` (default ``99999``) -- a block longer than
+  ``M`` lines is not printed verbatim; as a fallback only the queried line is
+  printed, as ``[line-number]:[code line]`` (a single line indicating the
+  block source overflows the threshold).
+
+## Tests
+
+The suite in ``tests/`` exercises both the library helpers and the CLI using
+real-world files from ``test-repos/`` (a cloned repo is skipped when absent):
+
+```bash
+uv run python -m unittest discover -s tests -t . -v
+```
 
 ## Library use
 

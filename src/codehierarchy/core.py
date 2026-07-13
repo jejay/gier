@@ -99,3 +99,29 @@ def block_path(blocks: list[tuple], line: int) -> list[tuple]:
         cur = parent
     chain.reverse()
     return [blocks[i] for i in chain]
+
+
+def block_len(block: tuple) -> int:
+    """Number of source lines a block spans (end_line - start_line + 1)."""
+    return block[4] - block[0] + 1
+
+
+def effective_block(blocks: list[tuple], line: int, min_length: int = 1) -> tuple[list[tuple], tuple | None]:
+    """Resolve the block to report for a code query at ``line``.
+
+    Returns ``(path_blocks, target)`` where ``target`` is the innermost block
+    containing ``line`` after climbing past any blocks shorter than
+    ``min_length`` -- a short block is treated as part of its parent, so the
+    parent's path and source are reported instead. ``path_blocks`` is the
+    ancestry chain (root first) of ``target``.
+
+    Returns ``([], None)`` when no block contains ``line``.
+    """
+    chain = block_path(blocks, line)
+    if not chain:
+        return [], None
+    i = len(chain) - 1
+    while i > 0 and block_len(chain[i]) < min_length:
+        i -= 1
+    effective = chain[: i + 1]
+    return effective, effective[-1]

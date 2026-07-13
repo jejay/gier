@@ -3,7 +3,7 @@
 Usage
 -----
     python -m codehierarchy PATH [PATH ...]
-    python -m codehierarchy (-l|-s) LINE PATH
+    python -m codehierarchy (-p|-c) LINE PATH
 
 Reads one or more files and prints, for each, a single line describing its
 block structure (see ``codehierarchy.output``). A trailing newline is always
@@ -12,48 +12,81 @@ emitted.
 The language is detected from each file's extension (unknown extensions
 default to Python). The tool operates on files; standard input is not read.
 
-Query options ``-l``/``--long-query`` and ``-s``/``--short-query`` take a
-1-based ``LINE`` number. They print the chain of nested blocks (root first,
-separated by ``>``) that enclose that line. ``-l`` additionally prints the
-source of the innermost enclosing block on the following line(s).
+Query options take a 1-based ``LINE`` number:
+
+* ``-p``/``--path-query``  -- print the chain of nested blocks (root first,
+  separated by ``>``) that enclose that line.
+* ``-c``/``--code-query``  -- like ``-b``, but also print the source of the
+  innermost enclosing block afterwards.
+
+For ``-c`` two length filters apply:
+
+* ``-N``/``--min-block-length`` (default 5) -- blocks shorter than ``N`` lines
+  are not treated as their own block; they are merged into their parent, so
+  the parent's path and source are reported instead.
+* ``-M``/``--max-block-length`` (default 99999) -- blocks longer than ``M``
+  lines are not printed verbatim; their source is collapsed to one
+  ``[line-number]:[code line]`` per line.
 """
 
 import sys
 
-from .core import analyze, analyze_blocks, block_path
+from .core import analyze, analyze_blocks, block_path, effective_block, block_len
 from .output import format_blocks
 
 
-def _parse_args(argv: list[str]) -> tuple[list[str], int | None, int | None]:
+def _parse_args(argv: list[str]) -> tuple[list[str], int | None, int | None, int, int]:
     paths: list[str] = []
-    long_query: int | None = None
-    short_query: int | None = None
+    path_query: int | None = None
+    code_query: int | None = None
+    min_length: int = 5
+    max_length: int = 99999
     i = 0
     while i < len(argv):
         a = argv[i]
-        if a in ("-l", "--long-query"):
+        if a in ("-p", "--path-query"):
             if i + 1 >= len(argv):
-                raise SystemExit("--long-query/-l requires a line number")
-            long_query = _parse_line("--long-query/-l", argv[i + 1])
+                raise SystemExit("--path-query/-p requires a line number")
+            path_query = _parse_line("--path-query/-p", argv[i + 1])
             i += 2
             continue
-        if a in ("-s", "--short-query"):
+        if a in ("-c", "--code-query"):
             if i + 1 >= len(argv):
-                raise SystemExit("--short-query/-s requires a line number")
-            short_query = _parse_line("--short-query/-s", argv[i + 1])
+                raise SystemExit("--code-query/-c requires a line number")
+            code_query = _parse_line("--code-query/-c", argv[i + 1])
             i += 2
             continue
-        if a.startswith("--long-query="):
-            long_query = _parse_line("--long-query", a.split("=", 1)[1])
+        if a in ("-N", "--min-block-length"):
+            if i + 1 >= len(argv):
+                raise SystemExit("--min-block-length/-N requires a number")
+            min_length = _parse_int("--min-block-length/-N", argv[i + 1])
+            i += 2
+            continue
+        if a in ("-M", "--max-block-length"):
+            if i + 1 >= len(argv):
+                raise SystemExit("--max-block-length/-M requires a number")
+            max_length = _parse_int("--max-block-length/-M", argv[i + 1])
+            i += 2
+            continue
+        if a.startswith("--path-query="):
+            path_query = _parse_line("--path-query/-p", a.split("=", 1)[1])
             i += 1
             continue
-        if a.startswith("--short-query="):
-            short_query = _parse_line("--short-query", a.split("=", 1)[1])
+        if a.startswith("--code-query="):
+            code_query = _parse_line("--code-query", a.split("=", 1)[1])
+            i += 1
+            continue
+        if a.startswith("--min-block-length="):
+            min_length = _parse_int("--min-block-length", a.split("=", 1)[1])
+            i += 1
+            continue
+        if a.startswith("--max-block-length="):
+            max_length = _parse_int("--max-block-length", a.split("=", 1)[1])
             i += 1
             continue
         paths.append(a)
         i += 1
-    return paths, long_query, short_query
+    return paths, path_query, code_query, min_length, max_length
 
 
 def _parse_line(flag: str, value: str) -> int:
@@ -66,10 +99,20 @@ def _parse_line(flag: str, value: str) -> int:
     return n
 
 
+def _parse_int(flag: str, value: str) -> int:
+    try:
+        n = int(value)
+    except ValueError:
+        raise SystemExit(f"{flag} requires an integer")
+    if n < 1:
+        raise SystemExit(f"{flag} must be >= 1")
+    return n
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     try:
-        paths, long_query, short_query = _parse_args(argv)
+        paths, path_query, code_query, min_length, max_length = _parse_args(argv)
     except SystemExit as exc:
         print(f"codehierarchy: {exc}", file=sys.stderr)
         return 2
@@ -78,14 +121,14 @@ def main(argv: list[str] | None = None) -> int:
         print("codehierarchy: no input file given", file=sys.stderr)
         return 2
 
-    if long_query is not None and short_query is not None:
+    if path_query is not None and code_query is not None:
         print(
-            "codehierarchy: use at most one of -l/--long-query, -s/--short-query",
+            "codehierarchy: use at most one of -p/--path-query, -c/--code-query",
             file=sys.stderr,
         )
         return 2
 
-    query_line = long_query if long_query is not None else short_query
+    query_line = code_query if code_query is not None else path_query
     if query_line is None:
         return _run_normal(paths)
 
@@ -103,16 +146,27 @@ def main(argv: list[str] | None = None) -> int:
         print(f"codehierarchy: syntax error in {path}: {exc}", file=sys.stderr)
         return 1
 
+    if code_query is not None:
+        path_blocks, target = effective_block(blocks, query_line, min_length)
+        sys.stdout.write(format_blocks(path_blocks) + "\n")
+        if target is not None:
+            lines = source.splitlines()
+            lo = target[0] - 1
+            hi = min(target[4], len(lines))
+            code = lines[lo:hi]
+            if code:
+                if block_len(target) > max_length:
+                    # Fallback: the block overflows the threshold, so print only
+                    # the queried line (with its number) instead of the full
+                    # block source.
+                    q = query_line - 1
+                    code = [f"{query_line}:{lines[q]}"] if 0 <= q < len(lines) else []
+                sys.stdout.write("\n".join(code) + "\n")
+        return 0
+
+    # Path-only query.
     path_blocks = block_path(blocks, query_line)
     sys.stdout.write(format_blocks(path_blocks) + "\n")
-    if long_query is not None and path_blocks:
-        inner = path_blocks[-1]
-        lines = source.splitlines()
-        lo = inner[0] - 1
-        hi = min(inner[4], len(lines))
-        code = lines[lo:hi]
-        if code:
-            sys.stdout.write("\n".join(code) + "\n")
     return 0
 
 
