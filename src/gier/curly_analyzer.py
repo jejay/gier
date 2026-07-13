@@ -115,6 +115,28 @@ def tokenize(source: str) -> list[tuple[str, int, int, str]]:
             continue
         # String / char / template literal.
         if c in "\"'`":
+            if c == "'":
+                # A single quote begins either a Rust char literal ('a',
+                # '\n', '\u{41}') or a Rust lifetime/label ('a, 'static,
+                # 'outer). Char literals cannot span a line, so if the quote
+                # is not closed on the *same* line it is a lifetime/label and
+                # must not be treated as a string -- otherwise it would
+                # swallow the rest of the file as one token and break brace
+                # accounting.
+                j = i + 1
+                while j < n and source[j] != "\n":
+                    if source[j] == "\\":
+                        j += 2
+                        continue
+                    if source[j] == c:
+                        j += 1
+                        break
+                    j += 1
+                if j < n and source[j - 1] == c:
+                    emit(source[i:j], "skip")
+                else:
+                    emit(c, "op")
+                continue
             j = i + 1
             while j < n:
                 if source[j] == "\\":
