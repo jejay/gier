@@ -1,6 +1,6 @@
 [project]
 name = "gier"
-version = "0.1.0"
+version = "0.0.1"
 description = "gier: grep with code-block hierarchy awareness; chier is its companion for whole-file hierarchy queries."
 readme = "README.md"
 requires-python = ">=3.10"
