@@ -1,0 +1,235 @@
+name: bitcoin - marking a block invalid
+repo: C++/bitcoin
+about: The definition of InvalidBlockFound() plus its two call sites (ConnectTip after a failed ConnectBlock, and AcceptBlock on an invalid CheckBlock). A rare search, so -N/-M are raised to show both callers in full.
+command: uv run gier -N 200 -M 200 "InvalidBlockFound\(" test-repos/C++/bitcoin/src/validation.cpp
+
+=== output ===
+[0]void Chainstate::InvalidBlockFound{2000,1~2009,1}
+```
+void Chainstate::InvalidBlockFound(CBlockIndex* pindex, const BlockValidationState& state)
+{
+    AssertLockHeld(cs_main);
+    if (state.GetResult() != BlockValidationResult::BLOCK_MUTATED) {
+        pindex->nStatus |= BLOCK_FAILED_VALID;
+        m_blockman.m_dirty_blockindex.insert(pindex);
+        setBlockIndexCandidates.erase(pindex);
+        InvalidChainFound(pindex);
+    }
+}
+```
+[0]bool Chainstate::ConnectTip{3025,1~3128,1}
+```
+bool Chainstate::ConnectTip(
+    BlockValidationState& state,
+    CBlockIndex* pindexNew,
+    std::shared_ptr<const CBlock> block_to_connect,
+    std::vector<ConnectedBlock>& connected_blocks,
+    DisconnectedBlockTransactions& disconnectpool)
+{
+    AssertLockHeld(cs_main);
+    if (m_mempool) AssertLockHeld(m_mempool->cs);
+
+    assert(pindexNew->pprev == m_chain.Tip());
+    // Read block from disk.
+    const auto time_1{SteadyClock::now()};
+    if (!block_to_connect) {
+        std::shared_ptr<CBlock> pblockNew = std::make_shared<CBlock>();
+        if (!m_blockman.ReadBlock(*pblockNew, *pindexNew)) {
+            return FatalError(m_chainman.GetNotifications(), state, _("Failed to read block."));
+        }
+        block_to_connect = std::move(pblockNew);
+    } else {
+        LogDebug(BCLog::BENCH, "  - Using cached block\n");
+    }
+    // Apply the block atomically to the chain state.
+    const auto time_2{SteadyClock::now()};
+    SteadyClock::time_point time_3;
+    // When adding aggregate statistics in the future, keep in mind that
+    // num_blocks_total may be zero until the ConnectBlock() call below.
+    LogDebug(BCLog::BENCH, "  - Load block from disk: %.2fms\n",
+             Ticks<MillisecondsDouble>(time_2 - time_1));
+    {
+        CoinsViewOverlay& view{*m_coins_views->m_connect_block_view};
+        const auto reset_guard{view.StartFetching(*block_to_connect)};
+        bool rv = ConnectBlock(*block_to_connect, state, pindexNew, view);
+        if (m_chainman.m_options.signals) {
+            m_chainman.m_options.signals->BlockChecked(block_to_connect, state);
+        }
+        if (!rv) {
+            if (state.IsInvalid())
+                InvalidBlockFound(pindexNew, state);
+            LogError("%s: ConnectBlock %s failed, %s\n", __func__, pindexNew->GetBlockHash().ToString(), state.ToString());
+            return false;
+        }
+        time_3 = SteadyClock::now();
+        m_chainman.time_connect_total += time_3 - time_2;
+        assert(m_chainman.num_blocks_total > 0);
+        LogDebug(BCLog::BENCH, "  - Connect total: %.2fms [%.2fs (%.2fms/blk)]\n",
+                 Ticks<MillisecondsDouble>(time_3 - time_2),
+                 Ticks<SecondsDouble>(m_chainman.time_connect_total),
+                 Ticks<MillisecondsDouble>(m_chainman.time_connect_total) / m_chainman.num_blocks_total);
+        view.Flush(/*reallocate_cache=*/false); // No need to reallocate since it only has capacity for 1 block
+    }
+    const auto time_4{SteadyClock::now()};
+    m_chainman.time_flush += time_4 - time_3;
+    LogDebug(BCLog::BENCH, "  - Flush: %.2fms [%.2fs (%.2fms/blk)]\n",
+             Ticks<MillisecondsDouble>(time_4 - time_3),
+             Ticks<SecondsDouble>(m_chainman.time_flush),
+             Ticks<MillisecondsDouble>(m_chainman.time_flush) / m_chainman.num_blocks_total);
+    // Write the chain state to disk, if necessary.
+    if (!FlushStateToDisk(state, FlushStateMode::IF_NEEDED)) {
+        return false;
+    }
+    const auto time_5{SteadyClock::now()};
+    m_chainman.time_chainstate += time_5 - time_4;
+    LogDebug(BCLog::BENCH, "  - Writing chainstate: %.2fms [%.2fs (%.2fms/blk)]\n",
+             Ticks<MillisecondsDouble>(time_5 - time_4),
+             Ticks<SecondsDouble>(m_chainman.time_chainstate),
+             Ticks<MillisecondsDouble>(m_chainman.time_chainstate) / m_chainman.num_blocks_total);
+    // Remove conflicting transactions from the mempool.;
+    if (m_mempool) {
+        m_mempool->removeForBlock(block_to_connect->vtx, pindexNew->nHeight);
+        disconnectpool.removeForBlock(block_to_connect->vtx);
+    }
+    // Update m_chain & related variables.
+    m_chain.SetTip(*pindexNew);
+    m_chainman.UpdateIBDStatus();
+    UpdateTip(pindexNew);
+
+    const auto time_6{SteadyClock::now()};
+    m_chainman.time_post_connect += time_6 - time_5;
+    m_chainman.time_total += time_6 - time_1;
+    LogDebug(BCLog::BENCH, "  - Connect postprocess: %.2fms [%.2fs (%.2fms/blk)]\n",
+             Ticks<MillisecondsDouble>(time_6 - time_5),
+             Ticks<SecondsDouble>(m_chainman.time_post_connect),
+             Ticks<MillisecondsDouble>(m_chainman.time_post_connect) / m_chainman.num_blocks_total);
+    LogDebug(BCLog::BENCH, "- Connect block: %.2fms [%.2fs (%.2fms/blk)]\n",
+             Ticks<MillisecondsDouble>(time_6 - time_1),
+             Ticks<SecondsDouble>(m_chainman.time_total),
+             Ticks<MillisecondsDouble>(m_chainman.time_total) / m_chainman.num_blocks_total);
+
+    // See if this chainstate has reached a target block and can be used to
+    // validate an assumeutxo snapshot. If it can, hashing the UTXO database
+    // will be slow, and cs_main could remain locked here for several minutes.
+    // If the snapshot is validated, the UTXO hash will be saved to
+    // this->m_target_utxohash, causing HistoricalChainstate() to return null
+    // and this chainstate to no longer be used. ActivateBestChain() will also
+    // stop connecting blocks to this chainstate because this->ReachedTarget()
+    // will be true and this->setBlockIndexCandidates will not have additional
+    // blocks.
+    Chainstate& current_cs{m_chainman.CurrentChainstate()};
+    m_chainman.MaybeValidateSnapshot(*this, current_cs);
+
+    connected_blocks.emplace_back(pindexNew, std::move(block_to_connect));
+    return true;
+}
+```
+[0]bool ChainstateManager::AcceptBlock{4314,1~4419,1}
+```
+bool ChainstateManager::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, BlockValidationState& state, CBlockIndex** ppindex, bool fRequested, const FlatFilePos* dbp, bool* fNewBlock, bool min_pow_checked)
+{
+    const CBlock& block = *pblock;
+
+    if (fNewBlock) *fNewBlock = false;
+    AssertLockHeld(cs_main);
+
+    CBlockIndex *pindexDummy = nullptr;
+    CBlockIndex *&pindex = ppindex ? *ppindex : pindexDummy;
+
+    bool accepted_header{AcceptBlockHeader(block, state, &pindex, min_pow_checked)};
+    CheckBlockIndex();
+
+    if (!accepted_header)
+        return false;
+
+    // Check all requested blocks that we do not already have for validity and
+    // save them to disk. Skip processing of unrequested blocks as an anti-DoS
+    // measure, unless the blocks have more work than the active chain tip, and
+    // aren't too far ahead of it, so are likely to be attached soon.
+    bool fAlreadyHave = pindex->nStatus & BLOCK_HAVE_DATA;
+    bool fHasMoreOrSameWork = (ActiveTip() ? pindex->nChainWork >= ActiveTip()->nChainWork : true);
+    // Blocks that are too out-of-order needlessly limit the effectiveness of
+    // pruning, because pruning will not delete block files that contain any
+    // blocks which are too close in height to the tip.  Apply this test
+    // regardless of whether pruning is enabled; it should generally be safe to
+    // not process unrequested blocks.
+    bool fTooFarAhead{pindex->nHeight > ActiveHeight() + int(MIN_BLOCKS_TO_KEEP)};
+
+    // TODO: Decouple this function from the block download logic by removing fRequested
+    // This requires some new chain data structure to efficiently look up if a
+    // block is in a chain leading to a candidate for best tip, despite not
+    // being such a candidate itself.
+    // Note that this would break the getblockfrompeer RPC
+
+    // TODO: deal better with return value and error conditions for duplicate
+    // and unrequested blocks.
+    if (fAlreadyHave) return true;
+    if (!fRequested) {  // If we didn't ask for it:
+        if (pindex->nTx != 0) return true;    // This is a previously-processed block that was pruned
+        if (!fHasMoreOrSameWork) return true; // Don't process less-work chains
+        if (fTooFarAhead) return true;        // Block height is too high
+
+        // Protect against DoS attacks from low-work chains.
+        // If our tip is behind, a peer could try to send us
+        // low-work blocks on a fake chain that we would never
+        // request; don't process these.
+        if (pindex->nChainWork < MinimumChainWork()) return true;
+    }
+
+    const CChainParams& params{GetParams()};
+
+    if (!CheckBlock(block, state, params.GetConsensus()) ||
+        !ContextualCheckBlock(block, state, *this, pindex->pprev)) {
+        if (Assume(state.IsInvalid())) {
+            ActiveChainstate().InvalidBlockFound(pindex, state);
+        }
+        LogError("%s: %s\n", __func__, state.ToString());
+        return false;
+    }
+
+    // Header is valid/has work, merkle tree and segwit merkle tree are good...RELAY NOW
+    // (but if it does not build on our best tip, let the SendMessages loop relay it)
+    if (!IsInitialBlockDownload() && ActiveTip() == pindex->pprev && m_options.signals) {
+        m_options.signals->NewPoWValidBlock(pindex, pblock);
+    }
+
+    // Write block to history file
+    if (fNewBlock) *fNewBlock = true;
+    try {
+        FlatFilePos blockPos{};
+        if (dbp) {
+            blockPos = *dbp;
+            m_blockman.UpdateBlockInfo(block, pindex->nHeight, blockPos);
+        } else {
+            blockPos = m_blockman.WriteBlock(block, pindex->nHeight);
+            if (blockPos.IsNull()) {
+                state.Error(strprintf("%s: Failed to find position to write new block to disk", __func__));
+                return false;
+            }
+        }
+        ReceivedBlockTransactions(block, pindex, blockPos);
+    } catch (const std::runtime_error& e) {
+        return FatalError(GetNotifications(), state, strprintf(_("System error while saving block to disk: %s"), e.what()));
+    }
+
+    // TODO: FlushStateToDisk() handles flushing of both block and chainstate
+    // data, so we should move this to ChainstateManager so that we can be more
+    // intelligent about how we flush.
+    // For now, since FlushStateMode::NONE is used, all that can happen is that
+    // the block files may be pruned, so we can just call this on one
+    // chainstate (particularly if we haven't implemented pruning with
+    // background validation yet).
+    //
+    // Flush errors (e.g. low disk space during pruning) are ignored, so that
+    // callers can't mistreat a flush failure as a block validation failure.
+    // The fatal error notification inside FlushStateToDisk still fires,
+    // so the node will shut down on unrecoverable flush errors regardless.
+    // For state a dummy value is used, and the return value is ignored.
+    BlockValidationState flush_state_ignore;
+    (void)ActiveChainstate().FlushStateToDisk(flush_state_ignore, FlushStateMode::NONE);
+
+    CheckBlockIndex();
+
+    return true;
+}
+```

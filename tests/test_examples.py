@@ -1,7 +1,7 @@
 """Golden-file tests that run the *real* ``gier`` CLI as a subprocess.
 
 Each example lives in its own, human-readable spec file under
-``tests/examples/<slug>.txt``. A spec records the exact command to run and the
+``tests/execution-snapshots/<slug>.txt``. A spec records the exact command to run and the
 full, verbatim output it should produce::
 
     name: <short title>
@@ -18,7 +18,7 @@ stored ``=== output ===`` section. Nothing is faked -- the same binary a user
 would run is invoked, so the spec files double as the complete, explorable
 output logs the maintainer can read and judge.
 
-To add an example: drop a new ``<slug>.txt`` in ``tests/examples/`` (the
+To add an example: drop a new ``<slug>.txt`` in ``tests/execution-snapshots/`` (the
 ``command:`` must be a runnable ``uv run gier ...`` invocation). To refresh the
 golden output after an intentional change, just re-run that command and paste
 the new stdout under ``=== output ===``.
@@ -34,7 +34,7 @@ import subprocess
 import unittest
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXAMPLES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "examples")
+EXAMPLES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "execution-snapshots")
 OUT_MARKER = "=== output ==="
 
 

@@ -1,0 +1,100 @@
+name: libgit2 - connect() delegates to connect_ext()
+repo: C/libgit2
+about: Only three hits: the definition of git_remote_connect_ext() and its two call sites in git_remote_connect() and connect_or_reset_options(). A rare, deliberate search, so -N/-M are cranked up to print every function whole.
+command: uv run gier -N 500 -M 500 "git_remote_connect_ext\(" test-repos/C/libgit2/src/libgit2/remote.c
+
+=== output ===
+[0]int git_remote_connect_ext{932,1~985,1}
+```
+int git_remote_connect_ext(
+	git_remote *remote,
+	git_direction direction,
+	const git_remote_connect_options *given_opts)
+{
+	git_remote_connect_options opts = GIT_REMOTE_CONNECT_OPTIONS_INIT;
+	git_str url = GIT_STR_INIT;
+	git_transport *t;
+	int error;
+
+	GIT_ASSERT_ARG(remote);
+
+	if (given_opts)
+		memcpy(&opts, given_opts, sizeof(git_remote_connect_options));
+
+	GIT_ERROR_CHECK_VERSION(&opts.callbacks, GIT_REMOTE_CALLBACKS_VERSION, "git_remote_callbacks");
+	GIT_ERROR_CHECK_VERSION(&opts.proxy_opts, GIT_PROXY_OPTIONS_VERSION, "git_proxy_options");
+
+	t = remote->transport;
+
+	if ((error = git_remote__urlfordirection(&url, remote, direction, &opts.callbacks)) < 0)
+		goto on_error;
+
+	/* If we don't have a transport object yet, and the caller specified a
+	 * custom transport factory, use that */
+	if (!t && opts.callbacks.transport &&
+	    (error = opts.callbacks.transport(&t, remote, opts.callbacks.payload)) < 0)
+		goto on_error;
+
+	/* If we still don't have a transport, then use the global
+	 * transport registrations which map URI schemes to transport factories */
+	if (!t && (error = git_transport_new(&t, remote, url.ptr)) < 0)
+		goto on_error;
+
+	if ((error = t->connect(t, url.ptr, direction, &opts)) != 0)
+		goto on_error;
+
+	remote->transport = t;
+
+	git_str_dispose(&url);
+
+	return 0;
+
+on_error:
+	if (t)
+		t->free(t);
+
+	git_str_dispose(&url);
+
+	if (t == remote->transport)
+		remote->transport = NULL;
+
+	return error;
+}
+```
+[0]int git_remote_connect{987,1~1006,1}
+```
+int git_remote_connect(
+	git_remote *remote,
+	git_direction direction,
+	const git_remote_callbacks *callbacks,
+	const git_proxy_options *proxy,
+	const git_strarray *custom_headers)
+{
+	git_remote_connect_options opts = GIT_REMOTE_CONNECT_OPTIONS_INIT;
+
+	if (callbacks)
+		memcpy(&opts.callbacks, callbacks, sizeof(git_remote_callbacks));
+
+	if (proxy)
+		memcpy(&opts.proxy_opts, proxy, sizeof(git_proxy_options));
+
+	if (custom_headers)
+		memcpy(&opts.custom_headers, custom_headers, sizeof(git_strarray));
+
+	return git_remote_connect_ext(remote, direction, &opts);
+}
+```
+[0]static int connect_or_reset_options{1251,1~1261,1}
+```
+static int connect_or_reset_options(
+	git_remote *remote,
+	int direction,
+	git_remote_connect_options *opts)
+{
+	if (!git_remote_connected(remote)) {
+		return git_remote_connect_ext(remote, direction, opts);
+	} else {
+		return remote->transport->set_connect_opts(remote->transport, opts);
+	}
+}
+```

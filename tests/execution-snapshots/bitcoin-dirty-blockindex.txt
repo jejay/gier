@@ -1,0 +1,223 @@
+name: bitcoin - when the block index is marked dirty
+repo: C++/bitcoin
+about: Tracing one member variable (m_blockman.m_dirty_blockindex) across validation shows exactly which paths flag the index dirty: InvalidBlockFound, ConnectBlock, and the loops inside InvalidateBlock.
+command: uv run gier -N 5 -M 200 "m_blockman.m_dirty_blockindex" test-repos/C++/bitcoin/src/validation.cpp
+
+=== output ===
+[0]void Chainstate::InvalidBlockFound{2000,1~2009,1}>[1]if{2003,5~2008,5}
+```4 spaces unindented
+if (state.GetResult() != BlockValidationResult::BLOCK_MUTATED) {
+    pindex->nStatus |= BLOCK_FAILED_VALID;
+    m_blockman.m_dirty_blockindex.insert(pindex);
+    setBlockIndexCandidates.erase(pindex);
+    InvalidChainFound(pindex);
+}
+```
+[0]bool Chainstate::ConnectBlock{2307,1~2684,1}:2661:        m_blockman.m_dirty_blockindex.insert(pindex);
+[0]bool Chainstate::InvalidateBlock{3537,1~3713,1}>[1]while{3582,5~3658,5}
+```4 spaces unindented
+while (true) {
+    if (m_chainman.m_interrupt) break;
+
+    // Make sure the queue of validation callbacks doesn't grow unboundedly.
+    if (m_chainman.m_options.signals) LimitValidationInterfaceQueue(*m_chainman.m_options.signals);
+
+    LOCK(cs_main);
+    // Lock for as long as disconnectpool is in scope to make sure MaybeUpdateMempoolForReorg is
+    // called after DisconnectTip without unlocking in between
+    LOCK(MempoolMutex());
+    if (!m_chain.Contains(*pindex)) break;
+    pindex_was_in_chain = true;
+    CBlockIndex* const disconnected_tip{m_chain.Tip()};
+
+    // ActivateBestChain considers blocks already in m_chain
+    // unconditionally valid already, so force disconnect away from it.
+    DisconnectedBlockTransactions disconnectpool{MAX_DISCONNECTED_TX_POOL_BYTES};
+    bool ret = DisconnectTip(state, &disconnectpool);
+    // DisconnectTip will add transactions to disconnectpool.
+    // Adjust the mempool to be consistent with the new tip, adding
+    // transactions back to the mempool if disconnecting was successful,
+    // and we're not doing a very deep invalidation (in which case
+    // keeping the mempool up to date is probably futile anyway).
+    MaybeUpdateMempoolForReorg(disconnectpool, /* fAddToMempool = */ (++disconnected <= 10) && ret);
+    if (!ret) return false;
+    CBlockIndex* new_tip{m_chain.Tip()};
+    assert(disconnected_tip->pprev == new_tip);
+
+    // We immediately mark the disconnected blocks as invalid.
+    // This prevents a case where pruned nodes may fail to invalidateblock
+    // and be left unable to start as they have no tip candidates (as there
+    // are no blocks that meet the "have data and are not invalid per
+    // nStatus" criteria for inclusion in setBlockIndexCandidates).
+    disconnected_tip->nStatus |= BLOCK_FAILED_VALID;
+    m_blockman.m_dirty_blockindex.insert(disconnected_tip);
+    setBlockIndexCandidates.erase(disconnected_tip);
+    setBlockIndexCandidates.insert(new_tip);
+
+    // Mark out-of-chain descendants of the invalidated block as invalid
+    // Add any equal or more work headers that are not invalidated to setBlockIndexCandidates
+    // Recalculate m_best_header if it became invalid.
+    auto candidate_it = highpow_outofchain_headers.lower_bound(new_tip->nChainWork);
+
+    const bool best_header_needs_update{m_chainman.m_best_header->GetAncestor(disconnected_tip->nHeight) == disconnected_tip};
+    if (best_header_needs_update) {
+        // new_tip is definitely still valid at this point, but there may be better ones
+        m_chainman.m_best_header = new_tip;
+    }
+
+    while (candidate_it != highpow_outofchain_headers.end()) {
+        CBlockIndex* candidate{candidate_it->second};
+        if (candidate->GetAncestor(disconnected_tip->nHeight) == disconnected_tip) {
+            // Children of failed blocks are marked as BLOCK_FAILED_VALID.
+            candidate->nStatus |= BLOCK_FAILED_VALID;
+            m_blockman.m_dirty_blockindex.insert(candidate);
+            // If invalidated, the block is irrelevant for setBlockIndexCandidates
+            // and for m_best_header and can be removed from the cache.
+            candidate_it = highpow_outofchain_headers.erase(candidate_it);
+            continue;
+        }
+        if (!CBlockIndexWorkComparator()(candidate, new_tip) &&
+            candidate->IsValid(BLOCK_VALID_TRANSACTIONS) &&
+            candidate->HaveNumChainTxs()) {
+            setBlockIndexCandidates.insert(candidate);
+            // Do not remove candidate from the highpow_outofchain_headers cache, because it might be a descendant of the block being invalidated
+            // which needs to be marked failed later.
+        }
+        if (best_header_needs_update &&
+            m_chainman.m_best_header->nChainWork < candidate->nChainWork) {
+            m_chainman.m_best_header = candidate;
+        }
+        ++candidate_it;
+    }
+
+    // Track the last disconnected block to call InvalidChainFound on it.
+    to_mark_failed = disconnected_tip;
+}
+```
+[0]bool Chainstate::InvalidateBlock{3537,1~3713,1}>[1]while{3582,5~3658,5}>[2]while{3631,9~3654,9}>[3]if{3633,13~3641,13}
+```12 spaces unindented
+if (candidate->GetAncestor(disconnected_tip->nHeight) == disconnected_tip) {
+    // Children of failed blocks are marked as BLOCK_FAILED_VALID.
+    candidate->nStatus |= BLOCK_FAILED_VALID;
+    m_blockman.m_dirty_blockindex.insert(candidate);
+    // If invalidated, the block is irrelevant for setBlockIndexCandidates
+    // and for m_best_header and can be removed from the cache.
+    candidate_it = highpow_outofchain_headers.erase(candidate_it);
+    continue;
+}
+```
+[0]bool Chainstate::InvalidateBlock{3537,1~3713,1}>[1]while{3582,5~3658,5}>[2]if{3670,9~3674,9}
+```8 spaces unindented
+if (!pindex_was_in_chain && !(pindex->nStatus & BLOCK_FAILED_VALID)) {
+    pindex->nStatus |= BLOCK_FAILED_VALID;
+    m_blockman.m_dirty_blockindex.insert(pindex);
+    setBlockIndexCandidates.erase(pindex);
+}
+```
+[0]void Chainstate::SetBlockFailureFlags{3715,1~3725,1}>[1]for{3719,5~3724,5}
+```4 spaces unindented
+for (auto& [_, block_index] : m_blockman.m_block_index) {
+    if (invalid_block != &block_index && block_index.GetAncestor(invalid_block->nHeight) == invalid_block) {
+        block_index.nStatus |= BLOCK_FAILED_VALID;
+        m_blockman.m_dirty_blockindex.insert(&block_index);
+    }
+}
+```
+[0]void Chainstate::ResetBlockFailureFlags{3727,1~3746,1}>[1]for{3733,5~3745,5}>[2]if{3734,9~3744,9}
+```8 spaces unindented
+if ((block_index.nStatus & BLOCK_FAILED_VALID) && (block_index.GetAncestor(nHeight) == pindex || pindex->GetAncestor(block_index.nHeight) == &block_index)) {
+    block_index.nStatus &= ~BLOCK_FAILED_VALID;
+    m_blockman.m_dirty_blockindex.insert(&block_index);
+    if (block_index.IsValid(BLOCK_VALID_TRANSACTIONS) && block_index.HaveNumChainTxs() && setBlockIndexCandidates.value_comp()(m_chain.Tip(), &block_index)) {
+        setBlockIndexCandidates.insert(&block_index);
+    }
+    if (&block_index == m_chainman.m_best_invalid) {
+        // Reset invalid block marker if it was pointing to one of those.
+        m_chainman.m_best_invalid = nullptr;
+    }
+}
+```
+[0]void ChainstateManager::ReceivedBlockTransactions{3781,1~3842,1}
+```
+void ChainstateManager::ReceivedBlockTransactions(const CBlock& block, CBlockIndex* pindexNew, const FlatFilePos& pos)
+{
+    AssertLockHeld(cs_main);
+    pindexNew->nTx = block.vtx.size();
+    // Typically m_chain_tx_count will be 0 at this point, but it can be nonzero if this
+    // is a pruned block which is being downloaded again, or if this is an
+    // assumeutxo snapshot block which has a hardcoded m_chain_tx_count value from the
+    // snapshot metadata. If the pindex is not the snapshot block and the
+    // m_chain_tx_count value is not zero, assert that value is actually correct.
+    auto prev_tx_sum = [](CBlockIndex& block) { return block.nTx + (block.pprev ? block.pprev->m_chain_tx_count : 0); };
+    if (!Assume(pindexNew->m_chain_tx_count == 0 || pindexNew->m_chain_tx_count == prev_tx_sum(*pindexNew) ||
+                std::ranges::any_of(m_chainstates, [&](const auto& cs) EXCLUSIVE_LOCKS_REQUIRED(cs_main) { return cs->SnapshotBase() == pindexNew; }))) {
+        LogWarning("Internal bug detected: block %d has unexpected m_chain_tx_count %i that should be %i (%s %s). Please report this issue here: %s\n",
+            pindexNew->nHeight, pindexNew->m_chain_tx_count, prev_tx_sum(*pindexNew), CLIENT_NAME, FormatFullVersion(), CLIENT_BUGREPORT);
+        pindexNew->m_chain_tx_count = 0;
+    }
+    pindexNew->nFile = pos.nFile;
+    pindexNew->nDataPos = pos.nPos;
+    pindexNew->nUndoPos = 0;
+    pindexNew->nStatus |= BLOCK_HAVE_DATA;
+    if (DeploymentActiveAt(*pindexNew, *this, Consensus::DEPLOYMENT_SEGWIT)) {
+        pindexNew->nStatus |= BLOCK_OPT_WITNESS;
+    }
+    pindexNew->RaiseValidity(BLOCK_VALID_TRANSACTIONS);
+    m_blockman.m_dirty_blockindex.insert(pindexNew);
+
+    if (pindexNew->pprev == nullptr || pindexNew->pprev->HaveNumChainTxs()) {
+        // If pindexNew is the genesis block or all parents are BLOCK_VALID_TRANSACTIONS.
+        std::deque<CBlockIndex*> queue;
+        queue.push_back(pindexNew);
+
+        // Recursively process any descendant blocks that now may be eligible to be connected.
+        while (!queue.empty()) {
+            CBlockIndex *pindex = queue.front();
+            queue.pop_front();
+            // Before setting m_chain_tx_count, assert that it is 0 or already set to
+            // the correct value. This assert will fail after receiving the
+            // assumeutxo snapshot block if assumeutxo snapshot metadata has an
+            // incorrect hardcoded AssumeutxoData::m_chain_tx_count value.
+            if (!Assume(pindex->m_chain_tx_count == 0 || pindex->m_chain_tx_count == prev_tx_sum(*pindex))) {
+                LogWarning("Internal bug detected: block %d has unexpected m_chain_tx_count %i that should be %i (%s %s). Please report this issue here: %s\n",
+                   pindex->nHeight, pindex->m_chain_tx_count, prev_tx_sum(*pindex), CLIENT_NAME, FormatFullVersion(), CLIENT_BUGREPORT);
+            }
+            pindex->m_chain_tx_count = prev_tx_sum(*pindex);
+            pindex->nSequenceId = nBlockSequenceId++;
+            for (const auto& c : m_chainstates) {
+                c->TryAddBlockIndexCandidate(pindex);
+            }
+            std::pair<std::multimap<CBlockIndex*, CBlockIndex*>::iterator, std::multimap<CBlockIndex*, CBlockIndex*>::iterator> range = m_blockman.m_blocks_unlinked.equal_range(pindex);
+            while (range.first != range.second) {
+                std::multimap<CBlockIndex*, CBlockIndex*>::iterator it = range.first;
+                queue.push_back(it->second);
+                range.first++;
+                m_blockman.m_blocks_unlinked.erase(it);
+            }
+        }
+    } else {
+        if (pindexNew->pprev && pindexNew->pprev->IsValid(BLOCK_VALID_TREE)) {
+            m_blockman.AddUnlinkedBlock(pindexNew);
+        }
+    }
+}
+```
+[0]util::Result ChainstateManager::PopulateAndValidateSnapshot{5780,1~5980,1}>[1]for{5956,5~5971,5}
+```4 spaces unindented
+for (int i = AFTER_GENESIS_START; i <= snapshot_chainstate.m_chain.Height(); ++i) {
+    index = snapshot_chainstate.m_chain[i];
+
+    // Fake BLOCK_OPT_WITNESS so that Chainstate::NeedsRedownload()
+    // won't ask for -reindex on startup.
+    if (DeploymentActiveAt(*index, *this, Consensus::DEPLOYMENT_SEGWIT)) {
+        index->nStatus |= BLOCK_OPT_WITNESS;
+    }
+
+    m_blockman.m_dirty_blockindex.insert(index);
+    // Changes to the block index will be flushed to disk after this call
+    // returns in `ActivateSnapshot()`, when `MaybeRebalanceCaches()` is
+    // called, since we've added a snapshot chainstate and therefore will
+    // have to downsize the IBD chainstate, which will result in a call to
+    // `FlushStateToDisk(FORCE_FLUSH)`.
+}
+```

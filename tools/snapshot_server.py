@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Serve the gier snapshot (golden) specs as a browsable website.
 
-Each spec under ``tests/examples/<slug>.txt`` records a ``uv run gier ...``
+Each spec under ``tests/execution-snapshots/<slug>.txt`` records a ``uv run gier ...``
 command and its full expected output. This tiny server renders them as web
 pages so a human can read the output and click through to the exact source
 file -- and even the matched line -- on GitHub, at the commit the
@@ -32,7 +32,7 @@ from urllib.parse import urlparse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(HERE)
-EXAMPLES_DIR = os.path.join(REPO_ROOT, "tests", "examples")
+EXAMPLES_DIR = os.path.join(REPO_ROOT, "tests", "execution-snapshots")
 OUT_MARKER = "=== output ==="
 
 # --- output parsing ------------------------------------------------------- #

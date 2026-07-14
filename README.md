@@ -592,9 +592,9 @@ uv run python -m unittest discover -s tests -t . -v
 
 ## Snapshot tests & browser
 
-``tests/examples/`` holds *golden* specs -- one ``.txt`` per example that
+``tests/execution-snapshots/`` holds *golden* specs -- one ``.txt`` per example that
 records the exact ``uv run gier …`` command and its full expected output (see
-``tests/examples/README.md``). Those same files double as browsable pages:
+``tests/execution-snapshots/README.md``). Those same files double as browsable pages:
 
 ```bash
 python tools/snapshot_server.py --port 8080

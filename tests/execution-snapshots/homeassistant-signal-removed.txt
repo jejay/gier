@@ -1,0 +1,23 @@
+name: Home Assistant - teardown broadcast signal
+repo: Python/core
+about: The helper that builds the 'config entry removed' signal, and its one call site inside ConfigEntries.async_remove -- gier shows the helper and the exact loop that fires it.
+command: uv run gier "signal_discovered_config_entry_removed\(" test-repos/Python/core/homeassistant/config_entries.py
+
+=== output ===
+[0]def signal_discovered_config_entry_removed{211,1~215,76}
+```
+def signal_discovered_config_entry_removed(
+    discovery_domain: str,
+) -> SignalType[ConfigEntry]:
+    """Format signal."""
+    return SignalType(f"{discovery_domain}_discovered_config_entry_removed")
+```
+[0]class ConfigEntries{2121,1~2980,76}>[1]async def async_remove{2240,5~2252,54}>[2]for{2245,9~2250,13}
+```8 spaces unindented
+for discovery_domain in entry.discovery_keys:
+    async_dispatcher_send_internal(
+        self.hass,
+        signal_discovered_config_entry_removed(discovery_domain),
+        entry,
+    )
+```

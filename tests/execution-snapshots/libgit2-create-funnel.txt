@@ -1,0 +1,44 @@
+name: libgit2 - the create() funnel
+repo: C/libgit2
+about: Every public git_remote_create_* wrapper bottoms out in the private git_remote_create_with_opts(). gier prints each wrapper's body, so you can see why every public entry point exists -- not just that it does.
+command: uv run gier "git_remote_create_with_opts\(" test-repos/C/libgit2/src/libgit2/remote.c
+
+=== output ===
+[0]int git_remote_create_with_opts{208,1~320,1}:208:int git_remote_create_with_opts(git_remote **out, const char *url, const git_remote_create_options *opts)
+[0]int git_remote_create{322,1~345,1}:340:	error = git_remote_create_with_opts(out, url, &opts);
+[0]int git_remote_create_with_fetchspec{347,1~361,1}
+```
+int git_remote_create_with_fetchspec(git_remote **out, git_repository *repo, const char *name, const char *url, const char *fetch)
+{
+	int error;
+	git_remote_create_options opts = GIT_REMOTE_CREATE_OPTIONS_INIT;
+
+	if ((error = ensure_remote_name_is_valid(name)) < 0)
+		return error;
+
+	opts.repository = repo;
+	opts.name = name;
+	opts.fetchspec = fetch;
+	opts.flags = GIT_REMOTE_CREATE_SKIP_DEFAULT_FETCHSPEC;
+
+	return git_remote_create_with_opts(out, url, &opts);
+}
+```
+[0]int git_remote_create_anonymous{363,1~370,1}
+```
+int git_remote_create_anonymous(git_remote **out, git_repository *repo, const char *url)
+{
+	git_remote_create_options opts = GIT_REMOTE_CREATE_OPTIONS_INIT;
+
+	opts.repository = repo;
+
+	return git_remote_create_with_opts(out, url, &opts);
+}
+```
+[0]int git_remote_create_detached{372,1~375,1}
+```
+int git_remote_create_detached(git_remote **out, const char *url)
+{
+	return git_remote_create_with_opts(out, url, NULL);
+}
+```
