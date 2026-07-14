@@ -462,7 +462,7 @@ force the collapse.)
 $ gier -i "ok" examples/space_sim.rs
 ```
 ~~~
-2:// it only exists to show off gier/chier on realistic-looking Rust control
+[]:2:// it only exists to show off gier/chier on realistic-looking Rust control
 [0]mod sim{5,1~82,1}>[1]impl World{30,5~68,5}>[2]fn tick,SimError>{35,9~67,9}:66:            Ok(())
 [0]mod sim{5,1~82,1}:71:        Ok((0..3).map(move |i| b.pos.0 / (i as f64 + 1.0)))
 [0]mod sim{5,1~82,1}>[1]fn integrate_star,SimError>{74,5~81,5}
@@ -471,10 +471,10 @@ fn integrate_star(b: &mut Body, dt: f64) -> Result<(), SimError> {
     let factor = match b.vel {
         (0.0, 0.0) => 1.0,
         _ => 2.0,
-        };
-        b.step(dt * factor);
-        Ok(())
-    }
+    };
+    b.step(dt * factor);
+    Ok(())
+}
 ```
 ~~~
 
