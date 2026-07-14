@@ -26,114 +26,6 @@ chier -c 47 file.py
 
 If you prefer pip: `pip install gier`.
 
-## The block-path syntax
-
-This is the little language both tools speak, so it is worth knowing by heart.
-A block is written as:
-
-```
-[<level>]<decl>{<start_line>,<start_col>~<end_line>,<end_col>}
-```
-
-* **`[<level>]`** — the 0-based nesting depth, wrapped in square brackets and
-  followed directly by the declaration. `0` is the top level (outermost).
-* **`<decl>`** — the declaration: the keyword, plus the name for
-  `def`/`class`/function definitions, with parameters and their brackets
-  stripped. Examples: `def abcd`, `class Foo`, `if`, `for`, `while`,
-  `void foo`, `fn main`, `int main`, `(arrow)`, `object:Foo`, `const o=`.
-* **`{` … `}`** wrap the coordinates.
-* **`<start_line>,<start_col>`** — the first character of the declaration
-  (1-based line and column).
-* **`~`** separates start from end.
-* **`<end_line>,<end_col>`** — the last character of the block's last line
-  (for curly-brace languages, that is the closing `}`).
-
-When several blocks are reported together, they are joined by a **relative
-marker** that describes the relationship to the *previous* block:
-
-| marker | meaning |
-|--------|---------|
-| `>`  | next block is a **child** (one level deeper) |
-| `|`  | next block is a **sibling** (same level) |
-| `<`  | next block is **higher**; the count of `<` is the number of levels ascended |
-
-### Example (Python)
-
-```
-[0]def abcd{21,1~61,20}>[1]if{46,5~48,16}|[1]for{52,5~59,18}<[0]if{63,1~69,13}
-```
-
-Read left to right: top-level `def abcd` (line 21) has an `if` child (line 46)
-and a sibling `for` (line 52); then we ascend back to the top level for another
-`if` (line 63). The whole description is exactly one line — one tidy record per
-file, or per match — which is what makes it easy for an agent to parse.
-
-## gier — Grep code HIERarchy
-
-```bash
-gier [-iHh] [-M N] [-N N] PATTERN FILE [.. [FILE]]
-```
-
-For each `FILE` (expanded with Python's `glob`, so `**/*.py` works) every line
-matching the compiled `PATTERN` yields a finding:
-
-* **inside a block** → the enclosing block's hierarchy plus its source, exactly
-  like a `chier -c` query;
-* **outside any block** (docstring, import, top-level statement) → a classic
-  grep line, but with the (empty) root block path written as `[]`, i.e.
-  `[]:line:code` (or `path:[]:line:code` when the file name is shown).
-
-Options:
-
-* `-i` / `--ignore-case` — case-insensitive (`re.IGNORECASE`; `re.MULTILINE` is
-  always set).
-* `-H` / `--with-filename` — always prefix `path:`.
-* `-h` / `--no-filename` — never prefix (overrides `-H` and the auto rule).
-* `-N N` / `--min-block-length N` (default `5`) and `-M N` /
-  `--max-block-length N` (default `20`) — filter the code block; `-M` defaults
-  to `20` so big blocks stay compact for agents, collapsing long blocks to a
-  single `blockpath:line:code` line.
-* `--color[=WHEN]` (default `auto`) — highlight the matched text. `WHEN` is
-  `auto` (color only when stdout is an interactive terminal), `always`, or
-  `never`. Only the matched text is colored, never the filename, line number,
-  or block-path metadata.
-* `--format[=FMT]` (default `md`) — choose the output format. `md` wraps each
-  block's source in a fenced code block and prints no separator between
-  findings (the closing fence delimits them); `plain` restores the classic
-  `--` separator between findings and prints source unfenced. In `md` mode,
-  multi-line fenced blocks have their common leading indentation removed and
-  the opening fence records how much — e.g. `` ```4 spaces unindented `` or
-  `` ```1 tab unindented `` — so the shortened block still lines up with the
-  real source for copy/search. Single-line blocks, and blocks with no common
-  indent (or a mixed space/tab indent), are left verbatim.
-* `--help` — show usage.
-
-The file name is printed (as `path:`) when `-H` is given, or automatically when
-the globs resolve to more than one file. In the default `md` format the block
-path line is followed by a fenced code block containing the source, and
-findings are not separated by any line; with `--format=plain` findings are
-separated by a `--` line (only between findings, never after the last). Exit
-status: `0` match, `1` none, `2` error.
-
-## chier — Code HIERarchy
-
-```bash
-chier PATH [PATH ...]
-chier (-p|-c) LINE PATH
-```
-
-* `-p LINE` / `--path-query LINE` — print the chain of nested blocks enclosing
-  `LINE` (root first, `>`-separated).
-* `-c LINE` / `--code-query LINE` — like `-p`, plus the block's source.
-* `-N N` / `--min-block-length N` (default `5`) — blocks shorter than `N` lines
-  merge into their parent, so you get the enclosing scope, not a one-liner.
-* `-M N` / `--max-block-length N` (default `99999`) — blocks longer than `N`
-  lines collapse to a single `blockpath:line:code` line.
-* `--exclude-fp-objects` — by default a `{` after `= : , [ return` is treated as
-  a block (capturing closures that look like object literals); pass this to
-  revert to the stricter heuristic.
-* `--help` — show usage.
-
 ## Worked example: a toy class
 
 The fastest way to see `gier`/`chier` do their thing is a tiny, real file.
@@ -183,10 +75,11 @@ $ chier examples/toy.py
 [0]class BankAccount{1,1~30,31}>[1]def __init__{2,5~5,25}|[1]def deposit{7,5~12,19}>[2]if{8,9~9,24}<[1]def withdraw{14,5~19,19}>[2]if{15,9~16,24}<[1]def statement{21,5~30,31}>[2]for{24,9~28,44}>[3]if{25,13~26,44}|[3]else{27,13~28,44}
 ```
 
-Reading left to right with the marker table: `[0]class BankAccount` is the top
-level; each `>[1]…` is a method nested inside it (`__init__`, `deposit`,
-`withdraw`, `statement`), all siblings (`|`). The small `>[2]if` / `>[2]for`
-blocks are the control-flow statements living inside each method.
+Reading left to right (the markers `>`/`|`/`<` are explained in the block-path
+syntax section): `[0]class BankAccount` is the top level; each `>[1]…` is a
+method nested inside it (`__init__`, `deposit`, `withdraw`, `statement`), all
+siblings (`|`). The small `>[2]if` / `>[2]for` blocks are the control-flow
+statements living inside each method.
 
 ### `gier`: grep with the enclosing block
 
@@ -299,8 +192,8 @@ $ chier examples/state_machine.rs
 [0]enum State{4,1~8,1}>[1]Idle,Running{5,5~6,26}<[0]enum Event{10,1~14,1}|[0]impl State{16,1~33,1}>[1]fn advance->State{17,5~28,5}>[2]match{18,9~27,9}>[3](arrow){19,14~19,70}|[3]State::Running{20,14~20,37}|[3]if{20,40~23,13}>[4]State::Running{22,17~22,46}<[3]State::Running{24,14~24,34}<<[1]fn is_active->bool{30,5~32,5}>[2]matches!(self,State::Running{31,9~31,44}
 ```
 
-Reading left to right, with the marker table from the block-path syntax
-section above:
+Reading left to right (the markers `>`/`|`/`<` are explained in the block-path
+syntax section):
 
 * `[0]enum State{4,1~8,1}` — top level; the `enum` spans lines 4–8.
 * `>[1]Idle,Running{5,5~6,26}` — `>` = child: the enum's variants
@@ -328,7 +221,8 @@ $ chier examples/space_sim.rs
 ```
 
 (The real output is a single line with no wrapping; it is shown wrapped here
-only for the docs.) The markers mean the same as above:
+only for the docs.) The markers mean the same as in the block-path syntax
+section:
 
 * `[0]mod sim{5,1~82,1}` — top level; the module spans lines 5–82.
 * `>[1]struct Body{8,5~12,5}` — `>` means "child": `struct Body` nests inside
@@ -360,15 +254,15 @@ $ gier "while" examples/space_sim.rs
 ~~~
 []:3:// flow (match guards, if-let, while-let, labeled loops, closures, async fn).
 [0]mod sim{5,1~82,1}>[1]impl World{30,5~68,5}>[2]fn tick,SimError>{35,9~67,9}>[3]for{41,14~65,13}>[4]if{42,17~62,17}>[5]match{44,21~61,21}>[6](arrow){45,25~52,25}
-```
-                        Kind::Star if b.mass > 1e3 => continue 'sim,
-                        Kind::Star => integrate_star(b, dt)?,
-                        Kind::Planet => {
-                            let pull = gravity(b)?;
-                            while let Some(force) = pull.next() {
-                                apply(force, b);
-                            }
-                        }
+```24 spaces unindented
+Kind::Star if b.mass > 1e3 => continue 'sim,
+Kind::Star => integrate_star(b, dt)?,
+Kind::Planet => {
+    let pull = gravity(b)?;
+    while let Some(force) = pull.next() {
+        apply(force, b);
+    }
+}
 ```
 ~~~
 
@@ -569,6 +463,103 @@ Both query line 20 (the `if count < 10` guard inside the `match`). With the
 default `-N 5` the small guard block merges into the `match`, so you see the
 whole `match`; with `-N 1` nothing merges, so the reported block is the tiny
 `State::Running { … }` arm header itself.
+
+## The block-path syntax
+
+This is the little language both tools speak, so it is worth knowing by heart.
+A block is written as:
+
+```
+[<level>]<decl>{<start_line>,<start_col>~<end_line>,<end_col>}
+```
+
+* **`[<level>]`** — the 0-based nesting depth, wrapped in square brackets and
+  followed directly by the declaration. `0` is the top level (outermost).
+* **`<decl>`** — the declaration: the keyword, plus the name for
+  `def`/`class`/function definitions, with parameters and their brackets
+  stripped. Examples: `def abcd`, `class Foo`, `if`, `for`, `while`,
+  `void foo`, `fn main`, `int main`, `(arrow)`, `object:Foo`, `const o=`.
+* **`{` … `}`** wrap the coordinates.
+* **`<start_line>,<start_col>`** — the first character of the declaration
+  (1-based line and column).
+* **`~`** separates start from end.
+* **`<end_line>,<end_col>`** — the last character of the block's last line
+  (for curly-brace languages, that is the closing `}`).
+
+When several blocks are reported together, they are joined by a **relative
+marker** that describes the relationship to the *previous* block:
+
+| marker | meaning |
+|--------|---------|
+| `>`  | next block is a **child** (one level deeper) |
+| `|`  | next block is a **sibling** (same level) |
+| `<`  | next block is **higher**; the count of `<` is the number of levels ascended |
+
+## gier — Grep code HIERarchy
+
+```bash
+gier [-iHh] [-M N] [-N N] PATTERN FILE [.. [FILE]]
+```
+
+For each `FILE` (expanded with Python's `glob`, so `**/*.py` works) every line
+matching the compiled `PATTERN` yields a finding:
+
+* **inside a block** → the enclosing block's hierarchy plus its source, exactly
+  like a `chier -c` query;
+* **outside any block** (docstring, import, top-level statement) → a classic
+  grep line, but with the (empty) root block path written as `[]`, i.e.
+  `[]:line:code` (or `path:[]:line:code` when the file name is shown).
+
+Options:
+
+* `-i` / `--ignore-case` — case-insensitive (`re.IGNORECASE`; `re.MULTILINE` is
+  always set).
+* `-H` / `--with-filename` — always prefix `path:`.
+* `-h` / `--no-filename` — never prefix (overrides `-H` and the auto rule).
+* `-N N` / `--min-block-length N` (default `5`) and `-M N` /
+  `--max-block-length N` (default `20`) — filter the code block; `-M` defaults
+  to `20` so big blocks stay compact for agents, collapsing long blocks to a
+  single `blockpath:line:code` line.
+* `--color[=WHEN]` (default `auto`) — highlight the matched text. `WHEN` is
+  `auto` (color only when stdout is an interactive terminal), `always`, or
+  `never`. Only the matched text is colored, never the filename, line number,
+  or block-path metadata.
+* `--format[=FMT]` (default `md`) — choose the output format. `md` wraps each
+  block's source in a fenced code block and prints no separator between
+  findings (the closing fence delimits them); `plain` restores the classic
+  `--` separator between findings and prints source unfenced. In `md` mode,
+  multi-line fenced blocks have their common leading indentation removed and
+  the opening fence records how much — e.g. `` ```4 spaces unindented `` or
+  `` ```1 tab unindented `` — so the shortened block still lines up with the
+  real source for copy/search. Single-line blocks, and blocks with no common
+  indent (or a mixed space/tab indent), are left verbatim.
+* `--help` — show usage.
+
+The file name is printed (as `path:`) when `-H` is given, or automatically when
+the globs resolve to more than one file. In the default `md` format the block
+path line is followed by a fenced code block containing the source, and
+findings are not separated by any line; with `--format=plain` findings are
+separated by a `--` line (only between findings, never after the last). Exit
+status: `0` match, `1` none, `2` error.
+
+## chier — Code HIERarchy
+
+```bash
+chier PATH [PATH ...]
+chier (-p|-c) LINE PATH
+```
+
+* `-p LINE` / `--path-query LINE` — print the chain of nested blocks enclosing
+  `LINE` (root first, `>`-separated).
+* `-c LINE` / `--code-query LINE` — like `-p`, plus the block's source.
+* `-N N` / `--min-block-length N` (default `5`) — blocks shorter than `N` lines
+  merge into their parent, so you get the enclosing scope, not a one-liner.
+* `-M N` / `--max-block-length N` (default `99999`) — blocks longer than `N`
+  lines collapse to a single `blockpath:line:code` line.
+* `--exclude-fp-objects` — by default a `{` after `= : , [ return` is treated as
+  a block (capturing closures that look like object literals); pass this to
+  revert to the stricter heuristic.
+* `--help` — show usage.
 
 ## Library use
 
