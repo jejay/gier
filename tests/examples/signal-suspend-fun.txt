@@ -1,0 +1,30 @@
+name: Signal-Android - ViewModel coroutine methods
+repo: Kotlin/Signal-Android
+about: A ViewModel's coroutine methods. `suspend fun` lives on `CallLinkDetailsViewModel`; one method collapses (the class is large), another prints in full with its 2-space indent reported.
+command: uv run gier "suspend fun" test-repos/Kotlin/Signal-Android/app/src/main/java/org/thoughtcrime/securesms/calls/links/details/CallLinkDetailsViewModel.kt
+
+=== output ===
+[0]class CallLinkDetailsViewModel{30,1~196,1}>[1]fun setApproveAllMembers{99,3~130,3}:99:  suspend fun setApproveAllMembers(approveAllMembers: Boolean) {
+[0]class CallLinkDetailsViewModel{30,1~196,1}>[1]fun setName{132,3~150,3}
+```2 spaces unindented
+suspend fun setName(name: String) {
+  val result = suspendCoroutine { continuation ->
+    val credentials = _state.value.callLink?.credentials ?: error("User cannot change the name of this call.")
+    disposables += mutationRepository.setCallName(credentials, name)
+      .subscribeBy(
+        onSuccess = { continuation.resume(Result.success(it)) },
+        onError = { continuation.resume(Result.failure(it)) }
+      )
+  }.getOrNull()
+
+  if (result == null) {
+    handleError("setName")
+  } else {
+    if (result !is UpdateCallLinkResult.Update) {
+      Log.w(TAG, "Failed to set name. $name")
+      toastFailure()
+    }
+  }
+}
+```
+[0]class CallLinkDetailsViewModel{30,1~196,1}>[1]fun delete:Boolean{152,3~176,3}:152:  suspend fun delete(): Boolean {

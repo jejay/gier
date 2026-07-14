@@ -1,0 +1,32 @@
+name: ASP.NET Core - startup configuration
+repo: CSharp/aspnetcore
+about: The request pipeline is assembled in the `Startup` class's `Configure*` methods. gier reports the 4 spaces removed.
+command: uv run gier "public void Configure" test-repos/CSharp/aspnetcore/src/Middleware/Rewrite/sample/Startup.cs
+
+=== output ===
+[0]class Startup{9,1~61,1}>[1]public void ConfigureServices{18,5~28,5}
+```4 spaces unindented
+public void ConfigureServices(IServiceCollection services)
+{
+    services.Configure<RewriteOptions>(options =>
+    {
+        options.AddRedirect("(.*)/$", "$1")
+               .AddRewrite(@"app/(\d+)", "app?id=$1", skipRemainingRules: false)
+               .AddRedirectToHttps(302, 5001)
+               .AddIISUrlRewrite(Environment.ContentRootFileProvider, "UrlRewrite.xml")
+               .AddApacheModRewrite(Environment.ContentRootFileProvider, "Rewrite.txt");
+    });
+}
+```
+[0]class Startup{9,1~61,1}>[1]public void Configure{30,5~38,5}
+```4 spaces unindented
+public void Configure(IApplicationBuilder app)
+{
+    app.UseRewriter();
+
+    app.Run(context =>
+    {
+        return context.Response.WriteAsync($"Rewritten Url: {context.Request.Path + context.Request.QueryString}");
+    });
+}
+```

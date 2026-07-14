@@ -1,0 +1,18 @@
+name: Svelte - compiler entry point
+repo: JavaScript/svelte
+about: The compiler entry point `export function compile`. The big `compile` collapses to one line; the tiny `compileModule` prints in full.
+command: uv run gier "export function compile" test-repos/JavaScript/svelte/packages/svelte/src/compiler/index.js
+
+=== output ===
+[0]function compile{23,1~60,1}:23:export function compile(source, options) {
+[0]function compileModule{69,1~76,1}
+```
+export function compileModule(source, options) {
+	source = remove_bom(source);
+	state.reset({ warning: options.warningFilter, filename: options.filename });
+	const validated = validate_module_options(options, '');
+
+	const analysis = analyze_module(source, validated);
+	return transform_module(analysis, source, validated);
+}
+```

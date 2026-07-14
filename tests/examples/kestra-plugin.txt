@@ -1,0 +1,26 @@
+name: kestra - plugin-annotated types
+repo: Java/kestra
+about: Which types are registered as plugins? `@Plugin`. gier surfaces the annotated `LogExporter` class (and its annotations).
+command: uv run gier "@Plugin" test-repos/Java/kestra/core/src/main/java/io/kestra/core/models/tasks/logs/LogExporter.java
+
+=== output ===
+[0]class LogExporter implements io.kestra.core.models.Plugin{17,2~33,1}
+```
+@Plugin
+@SuperBuilder(toBuilder = true)
+@Getter
+@NoArgsConstructor
+public abstract class LogExporter<T extends Output> implements io.kestra.core.models.Plugin {
+    @NotNull
+    @NotBlank
+    @Pattern(regexp = "^[a-zA-Z0-9][a-zA-Z0-9_-]*")
+    protected String id;
+
+    @NotBlank
+    @Pattern(regexp = JAVA_IDENTIFIER_REGEX)
+    protected String type;
+
+    public abstract T sendLogs(RunContext runContext, Flux<LogRecord> logRecords) throws Exception;
+
+}
+```

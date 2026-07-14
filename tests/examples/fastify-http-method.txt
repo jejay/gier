@@ -1,0 +1,14 @@
+name: Fastify - HTTP method registration
+repo: JavaScript/fastify
+about: Every HTTP verb is wired up in one place via `this.decorate(_method, ...)`. gier shows the enclosing `addHttpMethod` block (4-space indent reported).
+command: uv run gier "this\.decorate\(_method" test-repos/JavaScript/fastify/fastify.js
+
+=== output ===
+[0]function fastify{90,1~843,1}>[1]function addHttpMethod(method,{821,3~821,53}>[2]if{835,5~839,5}
+```4 spaces unindented
+if (!this.hasDecorator(_method)) {
+  this.decorate(_method, function (url, options, handler) {
+    return router.prepareRoute.call(this, { method, url, options, handler })
+  })
+}
+```

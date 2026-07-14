@@ -1,0 +1,269 @@
+name: zlib - gzip read primitives
+repo: C/zlib
+about: What gzip read primitives exist? `gz<word>(`. The regex catches both definitions (`gz_load(`, `gzread(`) and references.
+command: uv run gier "gz\w+\(" test-repos/C/zlib/gzread.c
+
+=== output ===
+14:   blocking, then gz_load() will return 0 if some data has been read, or -1 if
+[0]local int gz_load{18,1~47,1}:18:local int gz_load(gz_statep state, unsigned char *buf, unsigned len,
+[0]local int gz_load{18,1~47,1}>[1]if{35,5~43,5}
+```4 spaces unindented
+if (ret < 0) {
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        state->again = 1;
+        if (*have != 0)
+            return 0;
+    }
+    gz_error(state, Z_ERRNO, zstrerror());
+    return -1;
+}
+```
+[0]local int gz_avail{56,1~82,1}:56:local int gz_avail(gz_statep state) {
+[0]local int gz_avail{56,1~82,1}>[1]if{62,5~80,5}
+```4 spaces unindented
+if (state->eof == 0) {
+    if (strm->avail_in) {       /* copy what's there to the start */
+        unsigned char *p = state->in;
+        unsigned const char *q = strm->next_in;
+
+        if (q != p) {
+            unsigned n = strm->avail_in;
+
+            do {
+                *p++ = *q++;
+            } while (--n);
+        }
+    }
+    if (gz_load(state, state->in + strm->avail_in,
+                state->size - strm->avail_in, &got) == -1)
+        return -1;
+    strm->avail_in += got;
+    strm->next_in = state->in;
+}
+```
+92:   gz_look() will return 0 on success or -1 on failure. */
+[0]local int gz_look{93,1~170,1}:93:local int gz_look(gz_statep state) {
+[0]local int gz_look{93,1~170,1}>[1]if{97,5~122,5}>[2]if{101,9~106,9}
+```8 spaces unindented
+if (state->in == NULL || state->out == NULL) {
+    free(state->out);
+    free(state->in);
+    gz_error(state, Z_MEM_ERROR, "out of memory");
+    return -1;
+}
+```
+[0]local int gz_look{93,1~170,1}>[1]if{97,5~122,5}>[2]if{115,9~121,9}
+```8 spaces unindented
+if (inflateInit2(&(state->strm), 15 + 16) != Z_OK) {    /* gunzip */
+    free(state->out);
+    free(state->in);
+    state->size = 0;
+    gz_error(state, Z_MEM_ERROR, "out of memory");
+    return -1;
+}
+```
+[0]local int gz_look{93,1~170,1}:141:    if (gz_avail(state) == -1)
+[0]local int gz_look{93,1~170,1}:163:       space for gzungetc() */
+[0]local int gz_decomp{180,1~240,1}:180:local int gz_decomp(gz_statep state) {
+[0]local int gz_decomp{180,1~240,1}>[1]do{187,5~225,5}:189:        if (strm->avail_in == 0 && gz_avail(state) == -1) {
+[0]local int gz_decomp{180,1~240,1}>[1]do{187,5~225,5}>[2]if{193,9~197,9}
+```8 spaces unindented
+if (strm->avail_in == 0) {
+    if (!state->again)
+        gz_error(state, Z_BUF_ERROR, "unexpected end of file");
+    break;
+}
+```
+[0]local int gz_decomp{180,1~240,1}>[1]do{187,5~225,5}>[2]if{204,9~208,9}
+```8 spaces unindented
+if (ret == Z_STREAM_ERROR || ret == Z_NEED_DICT) {
+    gz_error(state, Z_STREAM_ERROR,
+             "internal error: inflate stream corrupt");
+    break;
+}
+```
+[0]local int gz_decomp{180,1~240,1}>[1]do{187,5~225,5}:210:            gz_error(state, Z_MEM_ERROR, "out of memory");
+[0]local int gz_decomp{180,1~240,1}>[1]do{187,5~225,5}>[2]if{213,9~224,9}
+```8 spaces unindented
+if (ret == Z_DATA_ERROR) {              /* deflate stream invalid */
+    if (state->junk == 1) {             /* trailing garbage is ok */
+        strm->avail_in = 0;
+        state->eof = 1;
+        state->how = LOOK;
+        ret = Z_OK;
+        break;
+    }
+    gz_error(state, Z_DATA_ERROR,
+             strm->msg == NULL ? "compressed data error" : strm->msg);
+    break;
+}
+```
+246:   otherwise 0.  gz_fetch() will leave state->how as COPY or GZIP unless the
+[0]local int gz_fetch{248,1~277,1}:248:local int gz_fetch(gz_statep state) {
+[0]local int gz_fetch{248,1~277,1}>[1]do{251,5~275,5}>[2]switch{252,9~274,9}:254:            if (gz_look(state) == -1)
+[0]local int gz_fetch{248,1~277,1}>[1]do{251,5~275,5}>[2]switch{252,9~274,9}:260:            if (gz_load(state, state->out, state->size << 1, &(state->x.have))
+[0]local int gz_fetch{248,1~277,1}>[1]do{251,5~275,5}>[2]switch{252,9~274,9}:268:            if (gz_decomp(state) == -1)
+[0]local int gz_fetch{248,1~277,1}>[1]do{251,5~275,5}>[2]switch{252,9~274,9}:272:            gz_error(state, Z_STREAM_ERROR, "state corrupt");
+[0]local int gz_skip{281,1~309,1}:281:local int gz_skip(gz_statep state) {
+[0]local int gz_skip{281,1~309,1}>[1]do{285,5~307,5}>[2]else{302,9~306,9}
+```8 spaces unindented
+else {
+    /* get more output, looking for header if required */
+    if (gz_fetch(state) == -1)
+        return -1;
+}
+```
+[0]local z_size_t gz_read{317,1~393,1}:317:local z_size_t gz_read(gz_statep state, voidp buf, z_size_t len) {
+[0]local z_size_t gz_read{317,1~393,1}:327:    if (state->skip && gz_skip(state) == -1)
+[0]local z_size_t gz_read{317,1~393,1}>[1]do{333,5~385,5}>[2]if{340,9~349,9}
+```8 spaces unindented
+if (state->x.have) {
+    if (state->x.have < n)
+        n = state->x.have;
+    memcpy(buf, state->x.next, n);
+    state->x.next += n;
+    state->x.have -= n;
+    if (state->err != Z_OK)
+        /* caught deferred error from gz_fetch() */
+        err = -1;
+}
+```
+[0]local z_size_t gz_read{317,1~393,1}>[1]do{333,5~385,5}:356:           buffer, so that gzgetc() can be fast */
+[0]local z_size_t gz_read{317,1~393,1}>[1]do{333,5~385,5}>[2]else if{357,9~365,9}
+```8 spaces unindented
+else if (state->how == LOOK || n < (state->size << 1)) {
+    /* get more output, looking for header if required */
+    if (gz_fetch(state) == -1 && state->x.have == 0)
+        /* if state->x.have != 0, error will be caught after copy */
+        err = -1;
+    continue;       /* no progress yet -- go back to copy above */
+    /* the copy above assures that we will leave with space in the
+       output buffer, allowing at least one gzungetc() to succeed */
+}
+```
+[0]local z_size_t gz_read{317,1~393,1}>[1]do{333,5~385,5}>[2]else if{357,9~365,9}
+```8 spaces unindented
+else if (state->how == LOOK || n < (state->size << 1)) {
+    /* get more output, looking for header if required */
+    if (gz_fetch(state) == -1 && state->x.have == 0)
+        /* if state->x.have != 0, error will be caught after copy */
+        err = -1;
+    continue;       /* no progress yet -- go back to copy above */
+    /* the copy above assures that we will leave with space in the
+       output buffer, allowing at least one gzungetc() to succeed */
+}
+```
+[0]local z_size_t gz_read{317,1~393,1}>[1]do{333,5~385,5}:369:            err = gz_load(state, (unsigned char *)buf, n, &n);
+[0]local z_size_t gz_read{317,1~393,1}>[1]do{333,5~385,5}>[2]else{372,9~378,9}
+```8 spaces unindented
+else {  /* state->how == GZIP */
+    state->strm.avail_out = n;
+    state->strm.next_out = (unsigned char *)buf;
+    err = gz_decomp(state);
+    n = state->x.have;
+    state->x.have = 0;
+}
+```
+[0]int ZEXPORT gzread{396,1~436,1}:396:int ZEXPORT gzread(gzFile file, voidp buf, unsigned len) {
+[0]int ZEXPORT gzread{396,1~436,1}:409:    gz_error(state, Z_OK, NULL);
+[0]int ZEXPORT gzread{396,1~436,1}:414:        gz_error(state, Z_STREAM_ERROR, "request does not fit in an int");
+[0]int ZEXPORT gzread{396,1~436,1}:419:    len = (unsigned)gz_read(state, buf, len);
+[0]int ZEXPORT gzread{396,1~436,1}>[1]if{422,5~432,5}>[2]if{425,9~431,9}
+```8 spaces unindented
+if (state->again) {
+    /* non-blocking input stalled after some input was read, but no
+       uncompressed bytes were produced -- let the application know
+       this isn't EOF */
+    gz_error(state, Z_ERRNO, zstrerror());
+    return -1;
+}
+```
+[0]z_size_t ZEXPORT gzfread{439,1~465,1}:439:z_size_t ZEXPORT gzfread(voidp buf, z_size_t size, z_size_t nitems,
+[0]z_size_t ZEXPORT gzfread{439,1~465,1}:454:    gz_error(state, Z_OK, NULL);
+[0]z_size_t ZEXPORT gzfread{439,1~465,1}:459:        gz_error(state, Z_STREAM_ERROR, "request does not fit in a size_t");
+[0]z_size_t ZEXPORT gzfread{439,1~465,1}:464:    return len ? gz_read(state, buf, len) / size : 0;
+[0]int ZEXPORT gzgetc{473,1~498,1}:473:int ZEXPORT gzgetc(gzFile file) {
+[0]int ZEXPORT gzgetc{473,1~498,1}:487:    gz_error(state, Z_OK, NULL);
+[0]int ZEXPORT gzgetc{473,1~498,1}:496:    /* nothing there -- try gz_read() */
+[0]int ZEXPORT gzgetc{473,1~498,1}:497:    return gz_read(state, buf, 1) < 1 ? -1 : buf[0];
+[0]int ZEXPORT gzgetc_{500,1~502,1}
+```
+int ZEXPORT gzgetc_(gzFile file) {
+    return gzgetc(file);
+}
+```
+[0]int ZEXPORT gzgetc_{500,1~502,1}
+```
+int ZEXPORT gzgetc_(gzFile file) {
+    return gzgetc(file);
+}
+```
+[0]int ZEXPORT gzungetc{505,1~563,1}:505:int ZEXPORT gzungetc(int c, gzFile file) {
+[0]int ZEXPORT gzungetc{505,1~563,1}:517:        (void)gz_look(state);
+[0]int ZEXPORT gzungetc{505,1~563,1}:522:    gz_error(state, Z_OK, NULL);
+[0]int ZEXPORT gzungetc{505,1~563,1}:525:    if (state->skip && gz_skip(state) == -1)
+[0]int ZEXPORT gzungetc{505,1~563,1}:542:    /* if no room, give up (must have already done a gzungetc()) */
+[0]int ZEXPORT gzungetc{505,1~563,1}:544:        gz_error(state, Z_DATA_ERROR, "out of room to push characters");
+[0]char*ZEXPORT gzgets{566,1~624,1}:566:char * ZEXPORT gzgets(gzFile file, char *buf, int len) {
+[0]char*ZEXPORT gzgets{566,1~624,1}:583:    gz_error(state, Z_OK, NULL);
+[0]char*ZEXPORT gzgets{566,1~624,1}:586:    if (state->skip && gz_skip(state) == -1)
+[0]char*ZEXPORT gzgets{566,1~624,1}>[1]if do{593,5~615,5}:595:        if (state->x.have == 0 && gz_fetch(state) == -1)
+[0]int ZEXPORT gzdirect{627,1~642,1}
+```
+int ZEXPORT gzdirect(gzFile file) {
+    gz_statep state;
+
+    /* get internal structure */
+    if (file == NULL)
+        return 0;
+    state = (gz_statep)file;
+
+    /* if the state is not known, but we can find out, then do so (this is
+       mainly for right after a gzopen() or gzdopen()) */
+    if (state->mode == GZ_READ && state->how == LOOK && state->x.have == 0)
+        (void)gz_look(state);
+
+    /* return 1 if transparent, 0 if processing a gzip stream */
+    return state->direct == 1;
+}
+```
+[0]int ZEXPORT gzdirect{627,1~642,1}
+```
+int ZEXPORT gzdirect(gzFile file) {
+    gz_statep state;
+
+    /* get internal structure */
+    if (file == NULL)
+        return 0;
+    state = (gz_statep)file;
+
+    /* if the state is not known, but we can find out, then do so (this is
+       mainly for right after a gzopen() or gzdopen()) */
+    if (state->mode == GZ_READ && state->how == LOOK && state->x.have == 0)
+        (void)gz_look(state);
+
+    /* return 1 if transparent, 0 if processing a gzip stream */
+    return state->direct == 1;
+}
+```
+[0]int ZEXPORT gzdirect{627,1~642,1}
+```
+int ZEXPORT gzdirect(gzFile file) {
+    gz_statep state;
+
+    /* get internal structure */
+    if (file == NULL)
+        return 0;
+    state = (gz_statep)file;
+
+    /* if the state is not known, but we can find out, then do so (this is
+       mainly for right after a gzopen() or gzdopen()) */
+    if (state->mode == GZ_READ && state->how == LOOK && state->x.have == 0)
+        (void)gz_look(state);
+
+    /* return 1 if transparent, 0 if processing a gzip stream */
+    return state->direct == 1;
+}
+```
+[0]int ZEXPORT gzclose_r{645,1~668,1}:645:int ZEXPORT gzclose_r(gzFile file) {
+[0]int ZEXPORT gzclose_r{645,1~668,1}:663:    gz_error(state, Z_OK, NULL);

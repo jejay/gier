@@ -1,0 +1,23 @@
+name: Home Assistant - integration teardown
+repo: Python/core
+about: Removing an integration goes through `async def async_remove`. It lives on both the per-entry `ConfigEntry` (huge -> squashed) and the `ConfigEntries` manager (small -> shown in full, with its 4-space indent reported).
+command: uv run gier "async def async_remove" test-repos/Python/core/homeassistant/config_entries.py
+
+=== output ===
+[0]class ConfigEntry{391,1~1426,19}>[1]async def async_remove{1064,5~1103,68}:1064:    async def async_remove(self, hass: HomeAssistant) -> None:
+[0]class ConfigEntries{2121,1~2980,76}>[1]async def async_remove{2240,5~2252,54}
+```4 spaces unindented
+async def async_remove(self, entry_id: str) -> dict[str, Any]:
+    """Remove, unload and clean up after an entry."""
+    unload_success, entry = await self._async_remove(entry_id)
+    self._async_clean_up(entry)
+
+    for discovery_domain in entry.discovery_keys:
+        async_dispatcher_send_internal(
+            self.hass,
+            signal_discovered_config_entry_removed(discovery_domain),
+            entry,
+        )
+
+    return {"require_restart": not unload_success}
+```

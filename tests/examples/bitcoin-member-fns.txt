@@ -1,0 +1,66 @@
+name: bitcoin - method definitions (regex index)
+repo: C++/bitcoin
+about: List every method definition returning bool/CAmount/void. Alternation + anchored regex; -M 1 squashes each to one `blockpath:line:code` line, giving a compact function index.
+command: uv run gier -M 1 "^(bool|CAmount|void) \w+::\w+" test-repos/C++/bitcoin/src/validation.cpp
+
+=== output ===
+[0]void Chainstate::MaybeUpdateMempoolForReorg{303,1~397,1}:303:void Chainstate::MaybeUpdateMempoolForReorg(
+[0]namespace{442,1~1780,1}>[1]bool MemPoolAccept::PreChecks{787,1~987,1}:787:bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
+[0]namespace{442,1~1780,1}>[1]bool MemPoolAccept::ReplacementChecks{989,1~1040,1}:989:bool MemPoolAccept::ReplacementChecks(Workspace& ws)
+[0]namespace{442,1~1780,1}>[1]bool MemPoolAccept::PackageRBFChecks{1042,1~1138,1}:1042:bool MemPoolAccept::PackageRBFChecks(const std::vector<CTransactionRef>& txns,
+[0]namespace{442,1~1780,1}>[1]bool MemPoolAccept::PolicyScriptChecks{1140,1~1161,1}:1140:bool MemPoolAccept::PolicyScriptChecks(const ATMPArgs& args, Workspace& ws)
+[0]namespace{442,1~1780,1}>[1]bool MemPoolAccept::ConsensusScriptChecks{1163,1~1194,1}:1163:bool MemPoolAccept::ConsensusScriptChecks(const ATMPArgs& args, Workspace& ws)
+[0]namespace{442,1~1780,1}>[1]void MemPoolAccept::FinalizeSubpackage{1196,1~1245,1}:1196:void MemPoolAccept::FinalizeSubpackage(const ATMPArgs& args)
+[0]namespace{442,1~1780,1}>[1]bool MemPoolAccept::SubmitPackage{1247,1~1322,1}:1247:bool MemPoolAccept::SubmitPackage(const ATMPArgs& args, std::vector<Workspace>& workspaces,
+[0]namespace{442,1~1780,1}>[1]void MemPoolAccept::CleanupTemporaryCoins{1573,1~1601,1}:1573:void MemPoolAccept::CleanupTemporaryCoins()
+[0]void CoinsViews::InitCache{1863,1~1873,1}:1863:void CoinsViews::InitCache(int32_t prevoutfetch_threads)
+[0]void Chainstate::SetTargetBlock{1909,1~1917,1}:1909:void Chainstate::SetTargetBlock(CBlockIndex* block)
+[0]void Chainstate::SetTargetBlockHash{1919,1~1923,1}:1919:void Chainstate::SetTargetBlockHash(uint256 block_hash)
+[0]void Chainstate::InitCoinsDB{1925,1~1941,1}:1925:void Chainstate::InitCoinsDB(
+[0]void Chainstate::InitCoinsCache{1943,1~1949,1}:1943:void Chainstate::InitCoinsCache(size_t cache_size_bytes)
+[0]bool ChainstateManager::IsInitialBlockDownload const noexcept{1952,1~1955,1}:1952:bool ChainstateManager::IsInitialBlockDownload() const noexcept
+[0]void Chainstate::CheckForkWarningConditions{1957,1~1973,1}:1957:void Chainstate::CheckForkWarningConditions()
+[0]void Chainstate::InvalidChainFound{1976,1~1996,1}:1976:void Chainstate::InvalidChainFound(CBlockIndex* pindexNew)
+[0]void Chainstate::InvalidBlockFound{2000,1~2009,1}:2000:void Chainstate::InvalidBlockFound(CBlockIndex* pindex, const BlockValidationState& state)
+[0]bool Chainstate::ConnectBlock{2307,1~2684,1}:2307:bool Chainstate::ConnectBlock(const CBlock& block, BlockValidationState& state, CBlockIndex* pindex,
+[0]bool Chainstate::FlushStateToDisk{2713,1~2859,1}:2713:bool Chainstate::FlushStateToDisk(
+[0]void Chainstate::ForceFlushStateToDisk{2861,1~2867,1}:2861:void Chainstate::ForceFlushStateToDisk(bool wipe_cache)
+[0]void Chainstate::PruneAndFlush{2869,1~2876,1}:2869:void Chainstate::PruneAndFlush()
+[0]void Chainstate::UpdateTip{2902,1~2937,1}:2902:void Chainstate::UpdateTip(const CBlockIndex* pindexNew)
+[0]bool Chainstate::DisconnectTip{2949,1~3012,1}:2949:bool Chainstate::DisconnectTip(BlockValidationState& state, DisconnectedBlockTransactions* disconnectpool)
+[0]bool Chainstate::ConnectTip{3025,1~3128,1}:3025:bool Chainstate::ConnectTip(
+[0]void Chainstate::PruneBlockIndexCandidates{3190,1~3199,1}:3190:void Chainstate::PruneBlockIndexCandidates() {
+[0]bool Chainstate::ActivateBestChainStep{3207,1~3290,1}:3207:bool Chainstate::ActivateBestChainStep(BlockValidationState& state, CBlockIndex& index_most_work, const std::shared_ptr<const CBlock>& pblock, bool& fInvalidFound, std::vector<ConnectedBlock>& connected_blocks)
+[0]void ChainstateManager::UpdateIBDStatus{3299,1~3307,1}:3299:void ChainstateManager::UpdateIBDStatus()
+[0]bool ChainstateManager::NotifyHeaderTip{3309,1~3329,1}:3309:bool ChainstateManager::NotifyHeaderTip()
+[0]bool Chainstate::ActivateBestChain{3339,1~3504,1}:3339:bool Chainstate::ActivateBestChain(BlockValidationState& state, std::shared_ptr<const CBlock> pblock)
+[0]bool Chainstate::PreciousBlock{3506,1~3535,1}:3506:bool Chainstate::PreciousBlock(BlockValidationState& state, CBlockIndex* pindex)
+[0]bool Chainstate::InvalidateBlock{3537,1~3713,1}:3537:bool Chainstate::InvalidateBlock(BlockValidationState& state, CBlockIndex* const pindex)
+[0]void Chainstate::SetBlockFailureFlags{3715,1~3725,1}:3715:void Chainstate::SetBlockFailureFlags(CBlockIndex* invalid_block)
+[0]void Chainstate::ResetBlockFailureFlags{3727,1~3746,1}:3727:void Chainstate::ResetBlockFailureFlags(CBlockIndex *pindex) {
+[0]void Chainstate::TryAddBlockIndexCandidate{3748,1~3778,1}:3748:void Chainstate::TryAddBlockIndexCandidate(CBlockIndex* pindex)
+[0]void ChainstateManager::ReceivedBlockTransactions{3781,1~3842,1}:3781:void ChainstateManager::ReceivedBlockTransactions(const CBlock& block, CBlockIndex* pindexNew, const FlatFilePos& pos)
+[0]void ChainstateManager::UpdateUncommittedBlockStructures const{4001,1~4011,1}:4001:void ChainstateManager::UpdateUncommittedBlockStructures(CBlock& block, const CBlockIndex* pindexPrev) const
+[0]void ChainstateManager::GenerateCoinbaseCommitment const{4013,1~4035,1}:4013:void ChainstateManager::GenerateCoinbaseCommitment(CBlock& block, const CBlockIndex* pindexPrev) const
+[0]bool ChainstateManager::AcceptBlockHeader{4202,1~4255,1}:4202:bool ChainstateManager::AcceptBlockHeader(const CBlockHeader& block, BlockValidationState& state, CBlockIndex** ppindex, bool min_pow_checked)
+[0]bool ChainstateManager::ProcessNewBlockHeaders{4258,1~4286,1}:4258:bool ChainstateManager::ProcessNewBlockHeaders(std::span<const CBlockHeader> headers, bool min_pow_checked, BlockValidationState& state, const CBlockIndex** ppindex)
+[0]void ChainstateManager::ReportHeadersPresync{4288,1~4311,1}:4288:void ChainstateManager::ReportHeadersPresync(int64_t height, int64_t timestamp)
+[0]bool ChainstateManager::AcceptBlock{4314,1~4419,1}:4314:bool ChainstateManager::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, BlockValidationState& state, CBlockIndex** ppindex, bool fRequested, const FlatFilePos* dbp, bool* fNewBlock, bool min_pow_checked)
+[0]bool ChainstateManager::ProcessNewBlock{4421,1~4469,1}:4421:bool ChainstateManager::ProcessNewBlock(const std::shared_ptr<const CBlock>& block, bool force_processing, bool min_pow_checked, bool* new_block)
+[0]bool Chainstate::LoadChainTip{4569,1~4622,1}:4569:bool Chainstate::LoadChainTip()
+[0]bool Chainstate::RollforwardBlock{4778,1~4798,1}:4778:bool Chainstate::RollforwardBlock(const CBlockIndex* pindex, CCoinsViewCache& inputs)
+[0]bool Chainstate::ReplayBlocks{4800,1~4885,1}:4800:bool Chainstate::ReplayBlocks()
+[0]bool Chainstate::NeedsRedownload const{4887,1~4903,1}:4887:bool Chainstate::NeedsRedownload() const
+[0]void Chainstate::ClearBlockIndexCandidates{4905,1~4909,1}:4905:void Chainstate::ClearBlockIndexCandidates()
+[0]void Chainstate::PopulateBlockIndexCandidates{4911,1~4925,1}:4911:void Chainstate::PopulateBlockIndexCandidates()
+[0]bool ChainstateManager::LoadBlockIndex{4927,1~4951,1}:4927:bool ChainstateManager::LoadBlockIndex()
+[0]bool ChainstateManager::LoadGenesisBlock{4953,1~4981,1}:4953:bool ChainstateManager::LoadGenesisBlock()
+[0]void ChainstateManager::LoadExternalBlockFile{4983,1~5150,1}:4983:void ChainstateManager::LoadExternalBlockFile(
+[0]bool ChainstateManager::ShouldCheckBlockIndex const{5152,1~5158,1}:5152:bool ChainstateManager::ShouldCheckBlockIndex() const
+[0]void ChainstateManager::CheckBlockIndex const{5160,1~5474,1}:5160:void ChainstateManager::CheckBlockIndex() const
+[0]bool Chainstate::ResizeCoinsCaches{5485,1~5514,1}:5485:bool Chainstate::ResizeCoinsCaches(size_t coinstip_size, size_t coinsdb_size)
+[0]void ChainstateManager::MaybeRebalanceCaches{6111,1~6141,1}:6111:void ChainstateManager::MaybeRebalanceCaches()
+[0]void ChainstateManager::ResetChainstates{6143,1~6146,1}:6143:void ChainstateManager::ResetChainstates()
+[0]bool ChainstateManager::DeleteChainstate{6259,1~6275,1}:6259:bool ChainstateManager::DeleteChainstate(Chainstate& chainstate)
+[0]void ChainstateManager::RecalculateBestHeader{6282,1~6291,1}:6282:void ChainstateManager::RecalculateBestHeader()
+[0]bool ChainstateManager::ValidatedSnapshotCleanup{6306,1~6371,1}:6306:bool ChainstateManager::ValidatedSnapshotCleanup(Chainstate& validated_cs, Chainstate& unvalidated_cs)

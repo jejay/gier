@@ -1,0 +1,156 @@
+name: RustPython - public functions of a module
+repo: Rust/RustPython
+about: List the public functions of a module with a regex (`pub fn \w+`). The functions sit at column 0, so no indent is reported.
+command: uv run gier "pub fn \w+" test-repos/Rust/RustPython/crates/compiler-core/src/bytecode.rs
+
+=== output ===
+[0]fn encode_exception_table->alloc::boxed::Box{73,1~85,1}
+```
+pub fn encode_exception_table(entries: &[ExceptionTableEntry]) -> alloc::boxed::Box<[u8]> {
+    let mut data = Vec::new();
+    for entry in entries {
+        let size = entry.end.saturating_sub(entry.start);
+        let depth_lasti = ((entry.depth as u32) << 1) | (entry.push_lasti as u32);
+
+        write_varint_with_start(&mut data, entry.start);
+        write_varint_be(&mut data, size);
+        write_varint_be(&mut data, entry.target);
+        write_varint_be(&mut data, depth_lasti);
+    }
+    data.into_boxed_slice()
+}
+```
+[0]fn find_exception_handler->Option{89,1~112,1}:89:pub fn find_exception_handler(table: &[u8], offset: u32) -> Option<ExceptionTableEntry> {
+[0]fn decode_exception_table->Vec{116,1~144,1}:116:pub fn decode_exception_table(table: &[u8]) -> Vec<ExceptionTableEntry> {
+[0]fn build_no_location_mask->Vec{149,1~211,1}:149:pub fn build_no_location_mask(linetable: &[u8], num_units: usize) -> Vec<bool> {
+[0]impl PyCodeLocationInfoKind{237,1~284,1}>[1]fn from_code->Option{238,7~259,5}:239:    pub fn from_code(code: u8) -> Option<Self> {
+[0]impl PyCodeLocationInfoKind{237,1~284,1}:262:    pub fn is_short(&self) -> bool {
+[0]impl PyCodeLocationInfoKind{237,1~284,1}>[1]fn short_column_group->Option{266,7~273,5}
+```4 spaces unindented
+#[must_use]
+pub fn short_column_group(&self) -> Option<u8> {
+    if self.is_short() {
+        Some(*self as u8)
+    } else {
+        Option::None
+    }
+}
+```
+[0]impl PyCodeLocationInfoKind{237,1~284,1}>[1]fn one_line_delta->Option{275,7~283,5}
+```4 spaces unindented
+#[must_use]
+pub fn one_line_delta(&self) -> Option<i32> {
+    match self {
+        Self::OneLine0 => Some(0),
+        Self::OneLine1 => Some(1),
+        Self::OneLine2 => Some(2),
+        _ => Option::None,
+    }
+}
+```
+[0]impl CodeUnits{668,1~872,1}>[1]fn disable_specialization{671,5~675,5}
+```4 spaces unindented
+pub fn disable_specialization(&self) {
+    for counter in &self.adaptive_counters {
+        counter.store(UNREACHABLE_BACKOFF, Ordering::Relaxed);
+    }
+}
+```
+[0]impl CodeUnits{668,1~872,1}>[1]fn read_op->Instruction{715,5~721,5}
+```4 spaces unindented
+pub fn read_op(&self, index: usize) -> Instruction {
+    let units = unsafe { &*self.units.get() };
+    let ptr = units.as_ptr().wrapping_add(index) as *const AtomicU8;
+    let byte = unsafe { &*ptr }.load(Ordering::Acquire);
+    // SAFETY: Only valid Instruction values are stored via replace_op/compare_exchange_op.
+    unsafe { mem::transmute::<u8, Instruction>(byte) }
+}
+```
+[0]impl CodeUnits{668,1~872,1}>[1]fn read_arg->OpArgByte{724,5~729,5}
+```4 spaces unindented
+pub fn read_arg(&self, index: usize) -> OpArgByte {
+    let units = unsafe { &*self.units.get() };
+    let ptr = units.as_ptr().wrapping_add(index) as *const u8;
+    let arg_ptr = unsafe { ptr.add(1) } as *const AtomicU8;
+    OpArgByte::from(unsafe { &*arg_ptr }.load(Ordering::Relaxed))
+}
+```
+[0]impl CodeUnits{668,1~872,1}>[1]fn read_cache_u16->u16{748,5~753,5}
+```4 spaces unindented
+pub fn read_cache_u16(&self, index: usize) -> u16 {
+    let units = unsafe { &*self.units.get() };
+    assert!(index < units.len(), "read_cache_u16: index out of bounds");
+    let ptr = units.as_ptr().wrapping_add(index) as *const AtomicU16;
+    unsafe { &*ptr }.load(Ordering::Relaxed)
+}
+```
+[0]impl CodeUnits{668,1~872,1}>[1]fn read_cache_u32->u32{770,5~774,5}
+```4 spaces unindented
+pub fn read_cache_u32(&self, index: usize) -> u32 {
+    let lo = self.read_cache_u16(index) as u32;
+    let hi = self.read_cache_u16(index + 1) as u32;
+    lo | (hi << 16)
+}
+```
+[0]impl CodeUnits{668,1~872,1}:797:    pub fn read_cache_ptr(&self, index: usize) -> usize {
+[0]impl CodeUnits{668,1~872,1}:803:    pub fn read_adaptive_counter(&self, index: usize) -> u16 {
+[0]impl CodeUnits{668,1~872,1}>[1]fn original_bytes->Vec{819,5~838,5}
+```4 spaces unindented
+pub fn original_bytes(&self) -> Vec<u8> {
+    let len = self.len();
+    let mut out = Vec::with_capacity(len * 2);
+    let mut i = 0;
+    while i < len {
+        let op = self.read_op(i).deoptimize();
+        let arg = self.read_arg(i);
+        let caches = op.cache_entries();
+        out.push(u8::from(op));
+        out.push(u8::from(arg));
+        // Zero-fill all CACHE entries (counter + cached data)
+        for _ in 0..caches {
+            i += 1;
+            out.push(0); // op = Cache = 0
+            out.push(0); // arg = 0
+        }
+        i += 1;
+    }
+    out
+}
+```
+[0]impl CodeUnits{668,1~872,1}>[1]fn quicken{844,5~871,5}:844:    pub fn quicken(&self) {
+[0]impl ConstantData{920,1~943,1}>[1]fn truthiness->bool{929,7~942,5}
+```4 spaces unindented
+#[must_use]
+pub fn truthiness(&self) -> bool {
+    match self {
+        Self::Tuple { elements } | Self::Frozenset { elements } => !elements.is_empty(),
+        Self::Integer { value } => !value.is_zero(),
+        Self::Float { value } => *value != 0.0,
+        Self::Complex { value } => value.re != 0.0 || value.im != 0.0,
+        Self::Boolean { value } => *value,
+        Self::Str { value } => !value.is_empty(),
+        Self::Bytes { value } => !value.is_empty(),
+        Self::Code { .. } | Self::Slice { .. } | Self::Ellipsis => true,
+        Self::None => false,
+    }
+}
+```
+[0]impl{1019,1~1108,1}>[1]fn fmt_display->fmt::Result{1020,5~1069,5}:1020:    pub fn fmt_display(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+[0]impl{1019,1~1108,1}>[1]fn to_owned->ConstantData{1071,7~1107,5}:1072:    pub fn to_owned(self) -> ConstantData {
+[0]impl{1144,1~1257,1}>[1]fn arg_names->Arguments{1147,5~1175,5}:1147:    pub fn arg_names(&self) -> Arguments<'_, C::Name> {
+[0]impl{1144,1~1257,1}>[1]fn label_targets->BTreeSet{1178,5~1188,5}
+```4 spaces unindented
+pub fn label_targets(&self) -> BTreeSet<Label> {
+    let mut label_targets = BTreeSet::new();
+    let mut arg_state = OpArgState::default();
+    for instruction in &*self.instructions {
+        let (instruction, arg) = arg_state.get(*instruction);
+        if let Some(l) = instruction.label_arg() {
+            label_targets.insert(l.get(arg));
+        }
+    }
+    label_targets
+}
+```
+[0]impl{1144,1~1257,1}>[1]fn map_bag{1191,5~1224,5}:1191:    pub fn map_bag<Bag: ConstantBag>(self, bag: Bag) -> CodeObject<Bag::Constant> {
+[0]impl{1144,1~1257,1}>[1]fn map_clone_bag{1227,5~1256,5}:1227:    pub fn map_clone_bag<Bag: ConstantBag>(&self, bag: &Bag) -> CodeObject<Bag::Constant> {

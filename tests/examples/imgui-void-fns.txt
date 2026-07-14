@@ -1,0 +1,345 @@
+name: imgui - all void ImGui functions
+repo: C++/imgui
+about: Enumerate every ImGui void function. Anchored regex over an 18k-line file, squashed with -M 1 into a tidy index of `blockpath:line:code` lines.
+command: uv run gier -M 1 "^void ImGui::" test-repos/C++/imgui/imgui.cpp
+
+=== output ===
+[0]void ImGui::ColorConvertRGBtoHSV{2881,1~2899,1}:2881:void ImGui::ColorConvertRGBtoHSV(float r, float g, float b, float& out_h, float& out_s, float& out_v)
+[0]void ImGui::ColorConvertHSVtoRGB{2903,1~2928,1}:2903:void ImGui::ColorConvertHSVtoRGB(float h, float s, float v, float& out_r, float& out_g, float& out_b)
+[0]void ImGui::CalcClipRectVisibleItemsY{3586,1~3590,1}:3586:void ImGui::CalcClipRectVisibleItemsY(const ImRect& clip_rect, const ImVec2& pos, float items_height, int* out_visible_start, int* out_visible_end)
+[0]void ImGui::PushStyleColor{3636,1~3645,1}:3636:void ImGui::PushStyleColor(ImGuiCol idx, ImU32 col)
+[0]void ImGui::PushStyleColor{3647,1~3656,1}:3647:void ImGui::PushStyleColor(ImGuiCol idx, const ImVec4& col)
+[0]void ImGui::PopStyleColor{3658,1~3673,1}:3658:void ImGui::PopStyleColor(int count)
+[0]void ImGui::PushStyleVar{3730,1~3738,1}:3730:void ImGui::PushStyleVar(ImGuiStyleVar idx, float val)
+[0]void ImGui::PushStyleVarX{3740,1~3748,1}:3740:void ImGui::PushStyleVarX(ImGuiStyleVar idx, float val_x)
+[0]void ImGui::PushStyleVarY{3750,1~3758,1}:3750:void ImGui::PushStyleVarY(ImGuiStyleVar idx, float val_y)
+[0]void ImGui::PushStyleVar{3760,1~3768,1}:3760:void ImGui::PushStyleVar(ImGuiStyleVar idx, const ImVec2& val)
+[0]void ImGui::PopStyleVar{3770,1~3789,1}:3770:void ImGui::PopStyleVar(int count)
+[0]void ImGui::RenderText{3882,1~3906,1}:3882:void ImGui::RenderText(ImVec2 pos, const char* text, const char* text_end, bool hide_text_after_hash)
+[0]void ImGui::RenderTextWrapped{3908,1~3922,1}:3908:void ImGui::RenderTextWrapped(ImVec2 pos, const char* text, const char* text_end, float wrap_width)
+[0]void ImGui::RenderTextClippedEx{3929,1~3955,1}:3929:void ImGui::RenderTextClippedEx(ImDrawList* draw_list, const ImVec2& pos_min, const ImVec2& pos_max, const char* text, const char* text_display_end, const ImVec2* text_size_if_known, const ImVec2& align, const ImRect* clip_rect)
+[0]void ImGui::RenderTextClipped{3957,1~3970,1}:3957:void ImGui::RenderTextClipped(const ImVec2& pos_min, const ImVec2& pos_max, const char* text, const char* text_end, const ImVec2* text_size_if_known, const ImVec2& align, const ImRect* clip_rect)
+[0]void ImGui::RenderTextEllipsis{3976,1~4018,1}:3976:void ImGui::RenderTextEllipsis(ImDrawList* draw_list, const ImVec2& pos_min, const ImVec2& pos_max, float ellipsis_max_x, const char* text, const char* text_end_full, const ImVec2* text_size_if_known)
+[0]void ImGui::RenderFrame{4021,1~4032,1}:4021:void ImGui::RenderFrame(ImVec2 p_min, ImVec2 p_max, ImU32 fill_col, bool borders, float rounding)
+[0]void ImGui::RenderFrameBorder{4034,1~4044,1}:4034:void ImGui::RenderFrameBorder(ImVec2 p_min, ImVec2 p_max, float rounding)
+[0]void ImGui::RenderColorComponentMarker{4046,1~4053,1}:4046:void ImGui::RenderColorComponentMarker(const ImRect& bb, ImU32 col, float rounding)
+[0]void ImGui::RenderNavCursor{4055,1~4097,1}:4055:void ImGui::RenderNavCursor(const ImRect& bb, ImGuiID id, ImGuiNavRenderCursorFlags flags, float rounding)
+[0]void ImGui::RenderMouseCursor{4099,1~4131,1}:4099:void ImGui::RenderMouseCursor(ImVec2 base_pos, float base_scale, ImGuiMouseCursor mouse_cursor, ImU32 col_fill, ImU32 col_border, ImU32 col_shadow)
+[0]void ImGui::SetCurrentContext{4144,1~4151,1}:4144:void ImGui::SetCurrentContext(ImGuiContext* ctx)
+[0]void ImGui::SetAllocatorFunctions{4153,1~4158,1}:4153:void ImGui::SetAllocatorFunctions(ImGuiMemAllocFunc alloc_func, ImGuiMemFreeFunc free_func, void* user_data)
+[0]void ImGui::GetAllocatorFunctions{4161,1~4166,1}:4161:void ImGui::GetAllocatorFunctions(ImGuiMemAllocFunc* p_alloc_func, ImGuiMemFreeFunc* p_free_func, void** p_user_data)
+[0]void ImGui::DestroyContext{4179,1~4188,1}:4179:void ImGui::DestroyContext(ImGuiContext* ctx)
+[0]void ImGui::Initialize{4445,1~4512,1}:4445:void ImGui::Initialize()
+[0]void ImGui::Shutdown{4515,1~4605,1}:4515:void ImGui::Shutdown()
+[0]void ImGui::SetContextName{4609,1~4612,1}:4609:void ImGui::SetContextName(ImGuiContext* ctx, const char* name)
+[0]void ImGui::RemoveContextHook{4625,1~4632,1}:4625:void ImGui::RemoveContextHook(ImGuiContext* ctx, ImGuiID hook_id)
+[0]void ImGui::CallContextHooks{4636,1~4642,1}:4636:void ImGui::CallContextHooks(ImGuiContext* ctx, ImGuiContextHookType hook_type)
+[0]void ImGui::GcCompactTransientMiscBuffers{4704,1~4715,1}:4704:void ImGui::GcCompactTransientMiscBuffers()
+[0]void ImGui::GcCompactTransientWindowBuffers{4722,1~4732,1}:4722:void ImGui::GcCompactTransientWindowBuffers(ImGuiWindow* window)
+[0]void ImGui::GcAwakeTransientWindowBuffers{4734,1~4742,1}:4734:void ImGui::GcAwakeTransientWindowBuffers(ImGuiWindow* window)
+[0]void ImGui::SetActiveID{4744,1~4808,1}:4744:void ImGui::SetActiveID(ImGuiID id, ImGuiWindow* window)
+[0]void ImGui::ClearActiveID{4810,1~4813,1}:4810:void ImGui::ClearActiveID()
+[0]void ImGui::SetHoveredID{4815,1~4822,1}:4815:void ImGui::SetHoveredID(ImGuiID id)
+[0]void ImGui::MarkItemEdited{4830,1~4854,1}:4830:void ImGui::MarkItemEdited(ImGuiID id)
+[0]void ImGui::SetLastItemData{5111,1~5118,1}:5111:void ImGui::SetLastItemData(ImGuiID item_id, ImGuiItemFlags item_flags, ImGuiItemStatusFlags status_flags, const ImRect& item_rect)
+[0]void ImGui::MemFree{5168,1~5176,1}:5168:void ImGui::MemFree(void* ptr)
+[0]void ImGui::DemoMarker{5178,1~5183,1}:5178:void ImGui::DemoMarker(const char* file, int line, const char* section)
+[0]void ImGui::DebugAllocHook{5186,1~5209,1}:5186:void ImGui::DebugAllocHook(ImGuiDebugAllocInfo* info, int frame_count, void* ptr, size_t size)
+[0]void ImGui::SetClipboardText{5218,1~5223,1}:5218:void ImGui::SetClipboardText(const char* text)
+[0]void ImGui::StartMouseMovingWindow{5325,1~5344,1}:5325:void ImGui::StartMouseMovingWindow(ImGuiWindow* window)
+[0]void ImGui::StopMouseMovingWindow{5350,1~5357,1}:5350:void ImGui::StopMouseMovingWindow()
+[0]void ImGui::UpdateMouseMovingWindowNewFrame{5364,1~5396,1}:5364:void ImGui::UpdateMouseMovingWindowNewFrame()
+[0]void ImGui::UpdateMouseMovingWindowEndFrame{5401,1~5462,1}:5401:void ImGui::UpdateMouseMovingWindowEndFrame()
+[0]void ImGui::UpdateHoveredWindowAndCaptureFlags{5470,1~5552,1}:5470:void ImGui::UpdateHoveredWindowAndCaptureFlags(const ImVec2& mouse_pos)
+[0]void ImGui::NewFrame{5577,1~5869,1}:5577:void ImGui::NewFrame()
+[0]void ImGui::PushClipRect{5969,1~5974,1}:5969:void ImGui::PushClipRect(const ImVec2& clip_rect_min, const ImVec2& clip_rect_max, bool intersect_with_current_clip_rect)
+[0]void ImGui::PopClipRect{5976,1~5981,1}:5976:void ImGui::PopClipRect()
+[0]void ImGui::EndFrame{6066,1~6166,1}:6066:void ImGui::EndFrame()
+[0]void ImGui::Render{6171,1~6241,1}:6171:void ImGui::Render()
+[0]void ImGui::FindHoveredWindowEx{6275,1~6330,1}:6275:void ImGui::FindHoveredWindowEx(const ImVec2& pos, bool find_first_and_in_any_viewport, ImGuiWindow** out_hovered_window, ImGuiWindow** out_hovered_window_under_moving_window)
+[0]void ImGui::SetNextItemAllowOverlap{6432,1~6436,1}:6432:void ImGui::SetNextItemAllowOverlap()
+[0]void ImGui::SetActiveIdUsingAllKeyboardKeys{6454,1~6461,1}:6454:void ImGui::SetActiveIdUsingAllKeyboardKeys()
+[0]void ImGui::EndChild{6633,1~6682,1}:6633:void ImGui::EndChild()
+[0]void ImGui::RenderWindowDecorations{7253,1~7347,1}:7253:void ImGui::RenderWindowDecorations(ImGuiWindow* window, const ImRect& title_bar_rect, bool title_bar_is_highlight, bool handle_borders_and_resize_grips, int resize_grip_count, const ImU32 resize_grip_col[4], float resize_grip_draw_size)
+[0]void ImGui::RenderWindowTitleBarContents{7350,1~7441,1}:7350:void ImGui::RenderWindowTitleBarContents(ImGuiWindow* window, const ImRect& title_bar_rect, const char* name, bool* p_open)
+[0]void ImGui::UpdateWindowParentAndRootLinks{7443,1~7458,1}:7443:void ImGui::UpdateWindowParentAndRootLinks(ImGuiWindow* window, ImGuiWindowFlags flags, ImGuiWindow* parent_window)
+[0]void ImGui::UpdateWindowSkipRefresh{7462,1~7484,1}:7462:void ImGui::UpdateWindowSkipRefresh(ImGuiWindow* window)
+[0]void ImGui::End{8310,1~8364,1}:8310:void ImGui::End()
+[0]void ImGui::PushItemFlag{8366,1~8377,1}:8366:void ImGui::PushItemFlag(ImGuiItemFlags option, bool enabled)
+[0]void ImGui::PopItemFlag{8379,1~8385,1}:8379:void ImGui::PopItemFlag()
+[0]void ImGui::BeginDisabled{8394,1~8407,1}:8394:void ImGui::BeginDisabled(bool disabled)
+[0]void ImGui::EndDisabled{8409,1~8420,1}:8409:void ImGui::EndDisabled()
+[0]void ImGui::BeginDisabledOverrideReenable{8425,1~8434,1}:8425:void ImGui::BeginDisabledOverrideReenable()
+[0]void ImGui::EndDisabledOverrideReenable{8436,1~8444,1}:8436:void ImGui::EndDisabledOverrideReenable()
+[0]void ImGui::PushTextWrapPos{8447,1~8453,1}:8447:void ImGui::PushTextWrapPos(float wrap_local_pos_x)
+[0]void ImGui::PopTextWrapPos{8455,1~8462,1}:8455:void ImGui::PopTextWrapPos()
+[0]void ImGui::SetWindowPos{8603,1~8624,1}:8603:void ImGui::SetWindowPos(ImGuiWindow* window, const ImVec2& pos, ImGuiCond cond)
+[0]void ImGui::SetWindowPos{8626,1~8630,1}:8626:void ImGui::SetWindowPos(const ImVec2& pos, ImGuiCond cond)
+[0]void ImGui::SetWindowPos{8632,1~8636,1}:8632:void ImGui::SetWindowPos(const char* name, const ImVec2& pos, ImGuiCond cond)
+[0]void ImGui::SetWindowSize{8644,1~8671,1}:8644:void ImGui::SetWindowSize(ImGuiWindow* window, const ImVec2& size, ImGuiCond cond)
+[0]void ImGui::SetWindowSize{8673,1~8676,1}:8673:void ImGui::SetWindowSize(const ImVec2& size, ImGuiCond cond)
+[0]void ImGui::SetWindowSize{8678,1~8682,1}:8678:void ImGui::SetWindowSize(const char* name, const ImVec2& size, ImGuiCond cond)
+[0]void ImGui::SetWindowCollapsed{8684,1~8695,1}:8684:void ImGui::SetWindowCollapsed(ImGuiWindow* window, bool collapsed, ImGuiCond cond)
+[0]void ImGui::SetWindowHitTestHole{8697,1~8702,1}:8697:void ImGui::SetWindowHitTestHole(ImGuiWindow* window, const ImVec2& pos, const ImVec2& size)
+[0]void ImGui::SetWindowHiddenAndSkipItemsForCurrentFrame{8704,1~8708,1}:8704:void ImGui::SetWindowHiddenAndSkipItemsForCurrentFrame(ImGuiWindow* window)
+[0]void ImGui::SetWindowCollapsed{8710,1~8713,1}:8710:void ImGui::SetWindowCollapsed(bool collapsed, ImGuiCond cond)
+[0]void ImGui::SetWindowCollapsed{8727,1~8731,1}:8727:void ImGui::SetWindowCollapsed(const char* name, bool collapsed, ImGuiCond cond)
+[0]void ImGui::SetNextWindowPos{8733,1~8741,1}:8733:void ImGui::SetNextWindowPos(const ImVec2& pos, ImGuiCond cond, const ImVec2& pivot)
+[0]void ImGui::SetNextWindowSize{8743,1~8750,1}:8743:void ImGui::SetNextWindowSize(const ImVec2& size, ImGuiCond cond)
+[0]void ImGui::SetNextWindowSizeConstraints{8756,1~8763,1}:8756:void ImGui::SetNextWindowSizeConstraints(const ImVec2& size_min, const ImVec2& size_max, ImGuiSizeCallback custom_callback, void* custom_callback_user_data)
+[0]void ImGui::SetNextWindowContentSize{8767,1~8772,1}:8767:void ImGui::SetNextWindowContentSize(const ImVec2& size)
+[0]void ImGui::SetNextWindowScroll{8774,1~8779,1}:8774:void ImGui::SetNextWindowScroll(const ImVec2& scroll)
+[0]void ImGui::SetNextWindowCollapsed{8781,1~8788,1}:8781:void ImGui::SetNextWindowCollapsed(bool collapsed, ImGuiCond cond)
+[0]void ImGui::SetNextWindowBgAlpha{8790,1~8795,1}:8790:void ImGui::SetNextWindowBgAlpha(float alpha)
+[0]void ImGui::SetNextWindowRefreshPolicy{8798,1~8803,1}:8798:void ImGui::SetNextWindowRefreshPolicy(ImGuiWindowRefreshFlags flags)
+[0]void ImGui::SetWindowFontScale{8836,1~8842,1}:8836:void ImGui::SetWindowFontScale(float scale)
+[0]void ImGui::PushFocusScope{8845,1~8853,1}:8845:void ImGui::PushFocusScope(ImGuiID id)
+[0]void ImGui::PopFocusScope{8855,1~8861,1}:8855:void ImGui::PopFocusScope()
+[0]void ImGui::SetNavFocusScope{8874,1~8899,1}:8874:void ImGui::SetNavFocusScope(ImGuiID focus_scope_id)
+[0]void ImGui::FocusItem{8902,1~8918,1}:8902:void ImGui::FocusItem()
+[0]void ImGui::ActivateItemByID{8920,1~8925,1}:8920:void ImGui::ActivateItemByID(ImGuiID id)
+[0]void ImGui::SetKeyboardFocusHere{8929,1~8960,1}:8929:void ImGui::SetKeyboardFocusHere(int offset)
+[0]void ImGui::SetItemDefaultFocus{8962,1~8978,1}:8962:void ImGui::SetItemDefaultFocus()
+[0]void ImGui::SetStateStorage{8980,1~8984,1}:8980:void ImGui::SetStateStorage(ImGuiStorage* tree)
+[0]void ImGui::UpdateFontsNewFrame{9068,1~9094,1}:9068:void ImGui::UpdateFontsNewFrame()
+[0]void ImGui::UpdateFontsEndFrame{9096,1~9099,1}:9096:void ImGui::UpdateFontsEndFrame()
+[0]void ImGui::RegisterUserTexture{9111,1~9116,1}:9111:void ImGui::RegisterUserTexture(ImTextureData* tex)
+[0]void ImGui::UnregisterUserTexture{9118,1~9124,1}:9118:void ImGui::UnregisterUserTexture(ImTextureData* tex)
+[0]void ImGui::RegisterFontAtlas{9126,1~9136,1}:9126:void ImGui::RegisterFontAtlas(ImFontAtlas* atlas)
+[0]void ImGui::UnregisterFontAtlas{9138,1~9147,1}:9138:void ImGui::UnregisterFontAtlas(ImFontAtlas* atlas)
+[0]void ImGui::SetCurrentFont{9157,1~9177,1}:9157:void ImGui::SetCurrentFont(ImFont* font, float font_size_before_scaling, float font_size_after_scaling)
+[0]void ImGui::UpdateCurrentFontSize{9179,1~9234,1}:9179:void ImGui::UpdateCurrentFontSize(float restore_font_size_after_scaling)
+[0]void ImGui::SetFontRasterizerDensity{9238,1~9246,1}:9238:void ImGui::SetFontRasterizerDensity(float rasterizer_density)
+[0]void ImGui::PushFont{9249,1~9261,1}:9249:void ImGui::PushFont(ImFont* font, float font_size_base)
+[0]void ImGui::PushID{9334,1~9340,1}:9334:void ImGui::PushID(const char* str_id)
+[0]void ImGui::PushID{9342,1~9348,1}:9342:void ImGui::PushID(const char* str_id_begin, const char* str_id_end)
+[0]void ImGui::PushID{9350,1~9356,1}:9350:void ImGui::PushID(const void* ptr_id)
+[0]void ImGui::PushID{9358,1~9364,1}:9358:void ImGui::PushID(int int_id)
+[0]void ImGui::PushOverrideID{9367,1~9376,1}:9367:void ImGui::PushOverrideID(ImGuiID id)
+[0]void ImGui::PopID{9403,1~9408,1}:9403:void ImGui::PopID()
+[0]void ImGui::GetTypematicRepeatRate{9616,1~9625,1}:9616:void ImGui::GetTypematicRepeatRate(ImGuiInputFlags flags, float* repeat_delay, float* repeat_rate)
+[0]void ImGui::TeleportMousePos{10185,1~10192,1}:10185:void ImGui::TeleportMousePos(const ImVec2& pos)
+[0]void ImGui::ResetMouseDragDelta{10240,1~10246,1}:10240:void ImGui::ResetMouseDragDelta(ImGuiMouseButton button)
+[0]void ImGui::SetMouseCursor{10261,1~10265,1}:10261:void ImGui::SetMouseCursor(ImGuiMouseCursor cursor_type)
+[0]void ImGui::UpdateMouseWheel{10489,1~10582,1}:10489:void ImGui::UpdateMouseWheel()
+[0]void ImGui::SetNextFrameWantCaptureKeyboard{10584,1~10588,1}:10584:void ImGui::SetNextFrameWantCaptureKeyboard(bool want_capture_keyboard)
+[0]void ImGui::SetNextFrameWantCaptureMouse{10590,1~10594,1}:10590:void ImGui::SetNextFrameWantCaptureMouse(bool want_capture_mouse)
+[0]void ImGui::UpdateInputEvents{10630,1~10766,1}:10630:void ImGui::UpdateInputEvents(bool trickle_fast_inputs)
+[0]void ImGui::SetKeyOwner{10822,1~10836,1}:10822:void ImGui::SetKeyOwner(ImGuiKey key, ImGuiID owner_id, ImGuiInputFlags flags)
+[0]void ImGui::SetKeyOwnersForKeyChord{10839,1~10846,1}:10839:void ImGui::SetKeyOwnersForKeyChord(ImGuiKeyChord key_chord, ImGuiID owner_id, ImGuiInputFlags flags)
+[0]void ImGui::SetNextItemShortcut{10902,1~10908,1}:10902:void ImGui::SetNextItemShortcut(ImGuiKeyChord key_chord, ImGuiInputFlags flags)
+[0]void ImGui::ItemHandleShortcut{10911,1~10933,1}:10911:void ImGui::ItemHandleShortcut(ImGuiID id)
+[0]void ImGui::ErrorCheckUsingSetCursorPosToExtendParentBoundaries{11037,1~11051,1}:11037:void ImGui::ErrorCheckUsingSetCursorPosToExtendParentBoundaries()
+[0]void ImGui::ErrorRecoveryStoreState{11141,1~11155,1}:11141:void ImGui::ErrorRecoveryStoreState(ImGuiErrorRecoveryState* state_out)
+[0]void ImGui::ErrorRecoveryTryToRecoverState{11160,1~11193,1}:11160:void ImGui::ErrorRecoveryTryToRecoverState(const ImGuiErrorRecoveryState* state_in)
+[0]void ImGui::ErrorCheckEndFrameFinalizeErrorTooltip{11329,1~11378,1}:11329:void ImGui::ErrorCheckEndFrameFinalizeErrorTooltip()
+[0]void ImGui::EndErrorTooltip{11405,1~11408,1}:11405:void ImGui::EndErrorTooltip()
+[0]void ImGui::KeepAliveID{11418,1~11425,1}:11418:void ImGui::KeepAliveID(ImGuiID id)
+[0]IM_MSVC_RUNTIME_CHECKS_RESTORE IM_MSVC_RUNTIME_CHECKS_OFF void ImGui::ItemSize{11534,1~11604,1}:11570:void ImGui::ItemSize(const ImVec2& size, float text_baseline_y)
+[0]IM_MSVC_RUNTIME_CHECKS_RESTORE void ImGui::SameLine{11605,1~11636,1}:11612:void ImGui::SameLine(float offset_from_start_x, float spacing_w)
+[0]void ImGui::SetCursorScreenPos{11644,1~11650,1}:11644:void ImGui::SetCursorScreenPos(const ImVec2& pos)
+[0]void ImGui::SetCursorPos{11672,1~11678,1}:11672:void ImGui::SetCursorPos(const ImVec2& local_pos)
+[0]void ImGui::SetCursorPosX{11680,1~11686,1}:11680:void ImGui::SetCursorPosX(float x)
+[0]void ImGui::SetCursorPosY{11688,1~11694,1}:11688:void ImGui::SetCursorPosY(float y)
+[0]void ImGui::Indent{11702,1~11708,1}:11702:void ImGui::Indent(float indent_w)
+[0]void ImGui::Unindent{11710,1~11716,1}:11710:void ImGui::Unindent(float indent_w)
+[0]void ImGui::SetNextItemWidth{11719,1~11724,1}:11719:void ImGui::SetNextItemWidth(float item_width)
+[0]void ImGui::PushItemWidth{11727,1~11734,1}:11727:void ImGui::PushItemWidth(float item_width)
+[0]void ImGui::PushMultiItemsWidths{11736,1~11753,1}:11736:void ImGui::PushMultiItemsWidths(int components, float w_full)
+[0]void ImGui::PopItemWidth{11755,1~11766,1}:11755:void ImGui::PopItemWidth()
+[0]void ImGui::BeginGroup{11868,1~11896,1}:11868:void ImGui::BeginGroup()
+[0]void ImGui::EndGroup{11898,1~11962,1}:11898:void ImGui::EndGroup()
+[0]void ImGui::ScrollToItem{12007,1~12012,1}:12007:void ImGui::ScrollToItem(ImGuiScrollFlags flags)
+[0]void ImGui::ScrollToRect{12014,1~12017,1}:12014:void ImGui::ScrollToRect(ImGuiWindow* window, const ImRect& item_rect, ImGuiScrollFlags flags)
+[0]void ImGui::SetScrollX{12116,1~12121,1}:12116:void ImGui::SetScrollX(ImGuiWindow* window, float scroll_x)
+[0]void ImGui::SetScrollY{12123,1~12128,1}:12123:void ImGui::SetScrollY(ImGuiWindow* window, float scroll_y)
+[0]void ImGui::SetScrollX{12130,1~12134,1}:12130:void ImGui::SetScrollX(float scroll_x)
+[0]void ImGui::SetScrollY{12136,1~12140,1}:12136:void ImGui::SetScrollY(float scroll_y)
+[0]void ImGui::SetScrollFromPosX{12152,1~12158,1}:12152:void ImGui::SetScrollFromPosX(ImGuiWindow* window, float local_x, float center_x_ratio)
+[0]void ImGui::SetScrollFromPosY{12160,1~12166,1}:12160:void ImGui::SetScrollFromPosY(ImGuiWindow* window, float local_y, float center_y_ratio)
+[0]void ImGui::SetScrollFromPosX{12168,1~12172,1}:12168:void ImGui::SetScrollFromPosX(float local_x, float center_x_ratio)
+[0]void ImGui::SetScrollFromPosY{12174,1~12178,1}:12174:void ImGui::SetScrollFromPosY(float local_y, float center_y_ratio)
+[0]void ImGui::SetScrollHereX{12181,1~12191,1}:12181:void ImGui::SetScrollHereX(float center_x_ratio)
+[0]void ImGui::SetScrollHereY{12194,1~12204,1}:12194:void ImGui::SetScrollHereY(float center_y_ratio)
+[0]void ImGui::EndTooltip{12269,1~12273,1}:12269:void ImGui::EndTooltip()
+[0]void ImGui::SetTooltip{12275,1~12281,1}:12275:void ImGui::SetTooltip(const char* fmt, ...)
+[0]void ImGui::SetTooltipV{12283,1~12289,1}:12283:void ImGui::SetTooltipV(const char* fmt, va_list args)
+[0]void ImGui::SetItemTooltip{12293,1~12300,1}:12293:void ImGui::SetItemTooltip(const char* fmt, ...)
+[0]void ImGui::SetItemTooltipV{12302,1~12306,1}:12302:void ImGui::SetItemTooltipV(const char* fmt, va_list args)
+[0]void ImGui::OpenPopup{12413,1~12419,1}:12413:void ImGui::OpenPopup(const char* str_id, ImGuiPopupFlags popup_flags)
+[0]void ImGui::OpenPopup{12421,1~12424,1}:12421:void ImGui::OpenPopup(ImGuiID id, ImGuiPopupFlags popup_flags)
+[0]void ImGui::OpenPopupEx{12430,1~12481,1}:12430:void ImGui::OpenPopupEx(ImGuiID id, ImGuiPopupFlags popup_flags)
+[0]void ImGui::ClosePopupsOverWindow{12485,1~12529,1}:12485:void ImGui::ClosePopupsOverWindow(ImGuiWindow* ref_window, bool restore_focus_to_window_under_popup)
+[0]void ImGui::ClosePopupsExceptModals{12531,1~12544,1}:12531:void ImGui::ClosePopupsExceptModals()
+[0]void ImGui::ClosePopupToLevel{12546,1~12569,1}:12546:void ImGui::ClosePopupToLevel(int remaining, bool restore_focus_to_window_under_popup)
+[0]void ImGui::CloseCurrentPopup{12572,1~12600,1}:12572:void ImGui::CloseCurrentPopup()
+[0]void ImGui::EndPopup{12704,1~12723,1}:12704:void ImGui::EndPopup()
+[0]void ImGui::OpenPopupOnItemClick{12764,1~12774,1}:12764:void ImGui::OpenPopupOnItemClick(const char* str_id, ImGuiPopupFlags popup_flags)
+[0]void ImGui::SetWindowFocus{12993,1~12996,1}:12993:void ImGui::SetWindowFocus()
+[0]void ImGui::SetWindowFocus{12998,1~13009,1}:12998:void ImGui::SetWindowFocus(const char* name)
+[0]void ImGui::SetNextWindowFocus{13011,1~13015,1}:13011:void ImGui::SetNextWindowFocus()
+[0]void ImGui::BringWindowToFocusFront{13073,1~13092,1}:13073:void ImGui::BringWindowToFocusFront(ImGuiWindow* window)
+[0]void ImGui::BringWindowToDisplayFront{13096,1~13109,1}:13096:void ImGui::BringWindowToDisplayFront(ImGuiWindow* window)
+[0]void ImGui::BringWindowToDisplayBack{13111,1~13123,1}:13111:void ImGui::BringWindowToDisplayBack(ImGuiWindow* window)
+[0]void ImGui::BringWindowToDisplayBehind{13125,1~13145,1}:13125:void ImGui::BringWindowToDisplayBehind(ImGuiWindow* window, ImGuiWindow* behind_window)
+[0]void ImGui::FocusWindow{13154,1~13212,1}:13154:void ImGui::FocusWindow(ImGuiWindow* window, ImGuiFocusRequestFlags flags)
+[0]void ImGui::FocusTopMostWindowUnderOne{13214,1~13243,1}:13214:void ImGui::FocusTopMostWindowUnderOne(ImGuiWindow* under_this_window, ImGuiWindow* ignore_window, ImGuiViewport* filter_viewport, ImGuiFocusRequestFlags flags)
+[0]void ImGui::SetNavCursorVisible{13253,1~13261,1}:13253:void ImGui::SetNavCursorVisible(bool visible)
+[0]void ImGui::SetNavCursorVisibleAfterMove{13264,1~13276,1}:13264:void ImGui::SetNavCursorVisibleAfterMove()
+[0]void ImGui::SetNavWindow{13278,1~13289,1}:13278:void ImGui::SetNavWindow(ImGuiWindow* window)
+[0]void ImGui::NavHighlightActivated{13291,1~13296,1}:13291:void ImGui::NavHighlightActivated(ImGuiID id)
+[0]void ImGui::NavClearPreferredPosForAxis{13298,1~13302,1}:13298:void ImGui::NavClearPreferredPosForAxis(ImGuiAxis axis)
+[0]void ImGui::SetNavID{13304,1~13318,1}:13304:void ImGui::SetNavID(ImGuiID id, ImGuiNavLayer nav_layer, ImGuiID focus_scope_id, const ImRect& rect_rel)
+[0]void ImGui::SetFocusID{13320,1~13349,1}:13320:void ImGui::SetFocusID(ImGuiID id, ImGuiWindow* window)
+[0]void ImGui::NavUpdateCurrentWindowIsScrollPushableX{13527,1~13532,1}:13527:void ImGui::NavUpdateCurrentWindowIsScrollPushableX()
+[0]void ImGui::NavProcessItemForTabbingRequest{13624,1~13681,1}:13624:void ImGui::NavProcessItemForTabbingRequest(ImGuiID id, ImGuiItemFlags item_flags, ImGuiNavMoveFlags move_flags)
+[0]void ImGui::NavMoveRequestSubmit{13690,1~13713,1}:13690:void ImGui::NavMoveRequestSubmit(ImGuiDir move_dir, ImGuiDir clip_dir, ImGuiNavMoveFlags move_flags, ImGuiScrollFlags scroll_flags)
+[0]void ImGui::NavMoveRequestResolveWithLastItem{13715,1~13721,1}:13715:void ImGui::NavMoveRequestResolveWithLastItem(ImGuiNavItemData* result)
+[0]void ImGui::NavMoveRequestResolveWithPastTreeNode{13724,1~13734,1}:13724:void ImGui::NavMoveRequestResolveWithPastTreeNode(ImGuiNavItemData* result, const ImGuiTreeNodeStackData* tree_node_data)
+[0]void ImGui::NavMoveRequestCancel{13736,1~13741,1}:13736:void ImGui::NavMoveRequestCancel()
+[0]void ImGui::NavMoveRequestForward{13744,1~13754,1}:13744:void ImGui::NavMoveRequestForward(ImGuiDir move_dir, ImGuiDir clip_dir, ImGuiNavMoveFlags move_flags, ImGuiScrollFlags scroll_flags)
+[0]void ImGui::NavMoveRequestTryWrapping{13758,1~13767,1}:13758:void ImGui::NavMoveRequestTryWrapping(ImGuiWindow* window, ImGuiNavMoveFlags wrap_flags)
+[0]void ImGui::NavRestoreLayer{13789,1~13810,1}:13789:void ImGui::NavRestoreLayer(ImGuiNavLayer layer)
+[0]void ImGui::NavInitWindow{13821,1~13850,1}:13821:void ImGui::NavInitWindow(ImGuiWindow* window, bool force_reinit)
+[0]void ImGui::NavInitRequestApplyResult{14106,1~14133,1}:14106:void ImGui::NavInitRequestApplyResult()
+[0]void ImGui::NavUpdateCreateMoveRequest{14160,1~14282,1}:14160:void ImGui::NavUpdateCreateMoveRequest()
+[0]void ImGui::NavUpdateCreateTabbingRequest{14284,1~14309,1}:14284:void ImGui::NavUpdateCreateTabbingRequest()
+[0]void ImGui::NavMoveRequestApplyResult{14312,1~14425,1}:14312:void ImGui::NavMoveRequestApplyResult()
+[0]void ImGui::NavUpdateWindowingOverlay{14936,1~14965,1}:14936:void ImGui::NavUpdateWindowingOverlay()
+[0]void ImGui::ClearDragDrop{14977,1~14991,1}:14977:void ImGui::ClearDragDrop()
+[0]void ImGui::EndDragDropSource{15127,1~15140,1}:15127:void ImGui::EndDragDropSource()
+[0]void ImGui::RenderDragDropTargetRectForItem{15328,1~15341,1}:15328:void ImGui::RenderDragDropTargetRectForItem(const ImRect& bb)
+[0]void ImGui::RenderDragDropTargetRectEx{15343,1~15348,1}:15343:void ImGui::RenderDragDropTargetRectEx(ImDrawList* draw_list, const ImRect& bb, float rounding)
+[0]void ImGui::EndDragDropTarget{15356,1~15366,1}:15356:void ImGui::EndDragDropTarget()
+[0]void ImGui::LogText{15390,1~15400,1}:15390:void ImGui::LogText(const char* fmt, ...)
+[0]void ImGui::LogTextV{15402,1~15409,1}:15402:void ImGui::LogTextV(const char* fmt, va_list args)
+[0]void ImGui::LogRenderedText{15414,1~15470,1}:15414:void ImGui::LogRenderedText(const ImVec2* ref_pos, const char* text, const char* text_end)
+[0]void ImGui::LogBegin{15473,1~15489,1}:15473:void ImGui::LogBegin(ImGuiLogFlags flags, int auto_open_depth)
+[0]void ImGui::LogSetNextTextDecoration{15492,1~15497,1}:15492:void ImGui::LogSetNextTextDecoration(const char* prefix, const char* suffix)
+[0]void ImGui::LogToTTY{15499,1~15509,1}:15499:void ImGui::LogToTTY(int auto_open_depth)
+[0]void ImGui::LogToFile{15512,1~15534,1}:15512:void ImGui::LogToFile(int auto_open_depth, const char* filename)
+[0]void ImGui::LogToClipboard{15537,1~15543,1}:15537:void ImGui::LogToClipboard(int auto_open_depth)
+[0]void ImGui::LogToBuffer{15545,1~15551,1}:15545:void ImGui::LogToBuffer(int auto_open_depth)
+[0]void ImGui::LogFinish{15553,1~15585,1}:15553:void ImGui::LogFinish()
+[0]void ImGui::LogButtons{15589,1~15614,1}:15589:void ImGui::LogButtons()
+[0]void ImGui::UpdateSettings{15636,1~15661,1}:15636:void ImGui::UpdateSettings()
+[0]void ImGui::MarkIniSettingsDirty{15663,1~15668,1}:15663:void ImGui::MarkIniSettingsDirty()
+[0]void ImGui::MarkIniSettingsDirty{15670,1~15676,1}:15670:void ImGui::MarkIniSettingsDirty(ImGuiWindow* window)
+[0]void ImGui::AddSettingsHandler{15678,1~15683,1}:15678:void ImGui::AddSettingsHandler(const ImGuiSettingsHandler* handler)
+[0]void ImGui::RemoveSettingsHandler{15685,1~15690,1}:15685:void ImGui::RemoveSettingsHandler(const char* type_name)
+[0]void ImGui::ClearIniSettings{15703,1~15710,1}:15703:void ImGui::ClearIniSettings()
+[0]void ImGui::CleanupIniSettings{15712,1~15730,1}:15712:void ImGui::CleanupIniSettings(ImGuiSettingsCleanupArgs* args)
+[0]void ImGui::LoadIniSettingsFromDisk{15732,1~15741,1}:15732:void ImGui::LoadIniSettingsFromDisk(const char* ini_filename)
+[0]void ImGui::LoadIniSettingsFromMemory{15745,1~15816,1}:15745:void ImGui::LoadIniSettingsFromMemory(const char* ini_data, size_t ini_size)
+[0]void ImGui::SaveIniSettingsToDisk{15818,1~15832,1}:15818:void ImGui::SaveIniSettingsToDisk(const char* ini_filename)
+[0]void ImGui::ClearWindowSettings{15888,1~15899,1}:15888:void ImGui::ClearWindowSettings(const char* name)
+[0]void ImGui::LocalizeRegisterEntries{16017,1~16022,1}:16017:void ImGui::LocalizeRegisterEntries(const ImGuiLocEntry* entries, int count)
+[0]void ImGui::SetWindowViewport{16058,1~16061,1}:16058:void ImGui::SetWindowViewport(ImGuiWindow* window, ImGuiViewportP* viewport)
+[0]void ImGui::ScaleWindowsInViewport{16073,1~16079,1}:16073:void ImGui::ScaleWindowsInViewport(ImGuiViewportP* viewport, float scale)
+[0]void ImGui::DebugRenderViewportThumbnail{16401,1~16430,1}:16401:void ImGui::DebugRenderViewportThumbnail(ImDrawList* draw_list, ImGuiViewportP* viewport, const ImRect& bb)
+[0]void ImGui::DebugRenderKeyboardPreview{16452,1~16499,1}:16452:void ImGui::DebugRenderKeyboardPreview(ImDrawList* draw_list)
+[0]void ImGui::DebugTextEncoding{16502,1~16538,1}:16502:void ImGui::DebugTextEncoding(const char* str)
+[0]void ImGui::DebugFlashStyleColor{16549,1~16556,1}:16549:void ImGui::DebugFlashStyleColor(ImGuiCol idx)
+[0]void ImGui::UpdateDebugToolFlashStyleColor{16558,1~16567,1}:16558:void ImGui::UpdateDebugToolFlashStyleColor()
+[0]void ImGui::ShowFontAtlas{16591,1~16742,1}:16591:void ImGui::ShowFontAtlas(ImFontAtlas* atlas)
+[0]void ImGui::DebugNodeTexture{16744,1~16775,1}:16744:void ImGui::DebugNodeTexture(ImTextureData* tex, int int_id, const ImFontAtlasRect* highlight_rect)
+[0]void ImGui::ShowMetricsWindow{16777,1~17400,1}:16777:void ImGui::ShowMetricsWindow(bool* p_open)
+[0]void ImGui::DebugBreakClearData{17402,1~17409,1}:17402:void ImGui::DebugBreakClearData()
+[0]void ImGui::DebugBreakButtonTooltip{17411,1~17421,1}:17411:void ImGui::DebugBreakButtonTooltip(bool keyboard_only, const char* description_of_location)
+[0]void ImGui::DebugNodeColumns{17461,1~17469,1}:17461:void ImGui::DebugNodeColumns(ImGuiOldColumns* columns)
+[0]void ImGui::DebugNodeDrawList{17472,1~17565,1}:17472:void ImGui::DebugNodeDrawList(ImGuiWindow* window, ImGuiViewportP* viewport, const ImDrawList* draw_list, const char* label)
+[0]void ImGui::DebugNodeDrawCmdShowMeshAndBoundingBox{17568,1~17595,1}:17568:void ImGui::DebugNodeDrawCmdShowMeshAndBoundingBox(ImDrawList* out_draw_list, const ImDrawList* draw_list, const ImDrawCmd* draw_cmd, bool show_mesh, bool show_aabb)
+[0]void ImGui::DebugNodeFont{17613,1~17763,1}:17613:void ImGui::DebugNodeFont(ImFont* font)
+[0]void ImGui::DebugNodeFontGlyphsForSrcMask{17765,1~17814,1}:17765:void ImGui::DebugNodeFontGlyphsForSrcMask(ImFont* font, ImFontBaked* baked, int src_mask)
+[0]void ImGui::DebugNodeFontGlyph{17816,1~17830,1}:17816:void ImGui::DebugNodeFontGlyph(ImFont* font, const ImFontGlyph* glyph)
+[0]void ImGui::DebugNodeStorage{17833,1~17843,1}:17833:void ImGui::DebugNodeStorage(ImGuiStorage* storage, const char* label)
+[0]void ImGui::DebugNodeTabBar{17846,1~17884,1}:17846:void ImGui::DebugNodeTabBar(ImGuiTabBar* tab_bar, const char* label)
+[0]void ImGui::DebugNodeViewport{17886,1~17907,1}:17886:void ImGui::DebugNodeViewport(ImGuiViewportP* viewport)
+[0]void ImGui::DebugNodeWindow{17909,1~17975,1}:17909:void ImGui::DebugNodeWindow(ImGuiWindow* window, const char* label)
+[0]void ImGui::DebugNodeWindowSettings{17977,1~17985,1}:17977:void ImGui::DebugNodeWindowSettings(ImGuiWindowSettings* settings)
+[0]void ImGui::DebugNodeWindowsList{17987,1~17998,1}:17987:void ImGui::DebugNodeWindowsList(ImVector<ImGuiWindow*>* windows, const char* label)
+[0]void ImGui::DebugNodeWindowsListByBeginStackParent{18001,1~18016,1}:18001:void ImGui::DebugNodeWindowsListByBeginStackParent(ImGuiWindow** windows, int windows_size, ImGuiWindow* parent_in_begin_stack)
+[0]void ImGui::DebugLog{18022,1~18028,1}:18022:void ImGui::DebugLog(const char* fmt, ...)
+[0]void ImGui::DebugLogV{18030,1~18058,1}:18030:void ImGui::DebugLogV(const char* fmt, va_list args)
+[0]void ImGui::ShowDebugLogWindow{18095,1~18164,1}:18095:void ImGui::ShowDebugLogWindow(bool* p_open)
+[0]void ImGui::DebugTextUnformattedWithLocateItem{18167,1~18186,1}:18167:void ImGui::DebugTextUnformattedWithLocateItem(const char* line_begin, const char* line_end)
+[0]void ImGui::DebugDrawCursorPos{18193,1~18200,1}:18193:void ImGui::DebugDrawCursorPos(ImU32 col)
+[0]void ImGui::DebugDrawLineExtents{18203,1~18213,1}:18203:void ImGui::DebugDrawLineExtents(ImU32 col)
+[0]void ImGui::DebugDrawItemRect{18216,1~18221,1}:18216:void ImGui::DebugDrawItemRect(ImU32 col)
+[0]void ImGui::DebugLocateItem{18226,1~18232,1}:18226:void ImGui::DebugLocateItem(ImGuiID target_id)
+[0]void ImGui::DebugLocateItemOnHover{18235,1~18250,1}:18235:void ImGui::DebugLocateItemOnHover(ImGuiID target_id)
+[0]void ImGui::DebugLocateItemResolveWithLastItem{18252,1~18269,1}:18252:void ImGui::DebugLocateItemResolveWithLastItem()
+[0]void ImGui::DebugStartItemPicker{18271,1~18275,1}:18271:void ImGui::DebugStartItemPicker()
+[0]void ImGui::UpdateDebugToolItemPicker{18278,1~18309,1}:18278:void ImGui::UpdateDebugToolItemPicker()
+[0]void ImGui::UpdateDebugToolItemPathQuery{18350,1~18357,1}:18350:void ImGui::UpdateDebugToolItemPathQuery()
+[0]void ImGui::DebugHookIdInfo{18360,1~18418,1}:18360:void ImGui::DebugHookIdInfo(ImGuiID id, ImGuiDataType data_type, const void* data_id, const void* data_id_end)
+[0]void ImGui::ShowIDStackToolWindow{18463,1~18527,1}:18463:void ImGui::ShowIDStackToolWindow(bool* p_open)
+[0]void ImGui::ShowMetricsWindow{18531,1~18531,39}
+```
+void ImGui::ShowMetricsWindow(bool*) {}
+```
+[0]void ImGui::ShowFontAtlas{18532,1~18532,42}
+```
+void ImGui::ShowFontAtlas(ImFontAtlas*) {}
+```
+[0]void ImGui::DebugNodeColumns{18533,1~18533,49}
+```
+void ImGui::DebugNodeColumns(ImGuiOldColumns*) {}
+```
+[0]void ImGui::DebugNodeDrawList{18534,1~18534,95}
+```
+void ImGui::DebugNodeDrawList(ImGuiWindow*, ImGuiViewportP*, const ImDrawList*, const char*) {}
+```
+[0]void ImGui::DebugNodeDrawCmdShowMeshAndBoundingBox{18535,1~18535,115}
+```
+void ImGui::DebugNodeDrawCmdShowMeshAndBoundingBox(ImDrawList*, const ImDrawList*, const ImDrawCmd*, bool, bool) {}
+```
+[0]void ImGui::DebugNodeFont{18536,1~18536,37}
+```
+void ImGui::DebugNodeFont(ImFont*) {}
+```
+[0]void ImGui::DebugNodeFontGlyphsForSrcMask{18537,1~18537,72}
+```
+void ImGui::DebugNodeFontGlyphsForSrcMask(ImFont*, ImFontBaked*, int) {}
+```
+[0]void ImGui::DebugNodeStorage{18538,1~18538,59}
+```
+void ImGui::DebugNodeStorage(ImGuiStorage*, const char*) {}
+```
+[0]void ImGui::DebugNodeTabBar{18539,1~18539,57}
+```
+void ImGui::DebugNodeTabBar(ImGuiTabBar*, const char*) {}
+```
+[0]void ImGui::DebugNodeWindow{18540,1~18540,57}
+```
+void ImGui::DebugNodeWindow(ImGuiWindow*, const char*) {}
+```
+[0]void ImGui::DebugNodeWindowSettings{18541,1~18541,60}
+```
+void ImGui::DebugNodeWindowSettings(ImGuiWindowSettings*) {}
+```
+[0]void ImGui::DebugNodeWindowsList{18542,1~18542,73}
+```
+void ImGui::DebugNodeWindowsList(ImVector<ImGuiWindow*>*, const char*) {}
+```
+[0]void ImGui::DebugNodeViewport{18543,1~18543,49}
+```
+void ImGui::DebugNodeViewport(ImGuiViewportP*) {}
+```
+[0]void ImGui::ShowDebugLogWindow{18545,1~18545,40}
+```
+void ImGui::ShowDebugLogWindow(bool*) {}
+```
+[0]void ImGui::ShowIDStackToolWindow{18546,1~18546,43}
+```
+void ImGui::ShowIDStackToolWindow(bool*) {}
+```
+[0]void ImGui::DebugStartItemPicker{18547,1~18547,37}
+```
+void ImGui::DebugStartItemPicker() {}
+```
+[0]void ImGui::DebugHookIdInfo{18548,1~18548,80}
+```
+void ImGui::DebugHookIdInfo(ImGuiID, ImGuiDataType, const void*, const void*) {}
+```
+[0]void ImGui::ShowFontSelector{18555,1~18583,1}:18555:void ImGui::ShowFontSelector(const char* label)

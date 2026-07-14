@@ -1,0 +1,34 @@
+name: yt-dlp - base extractor method
+repo: Python/yt-dlp
+about: A developer extending yt-dlp hunts for the extractor entry point `def _real_extract`. gier points at the right enclosing class for each override; the ~4000-line base class collapses to a single line while the small SearchInfoExtractor / UnsupportedURLIE helpers print in full.
+command: uv run gier "def _real_extract" test-repos/Python/yt-dlp/yt_dlp/extractor/common.py
+
+=== output ===
+[0]class InfoExtractor{105,1~4122,50}:830:    def _real_extract(self, url):
+[0]class SearchInfoExtractor{4125,1~4167,30}>[1]def _real_extract{4139,5~4152,48}
+```4 spaces unindented
+def _real_extract(self, query):
+    prefix, query = self._match_valid_url(query).group('prefix', 'query')
+    if prefix == '':
+        return self._get_n_results(query, 1)
+    elif prefix == 'all':
+        return self._get_n_results(query, self._MAX_RESULTS)
+    else:
+        n = int(prefix)
+        if n <= 0:
+            raise ExtractorError(f'invalid download number {n} for query "{query}"')
+        elif n > self._MAX_RESULTS:
+            self.report_warning('%s returns max %i results (you requested %i)' % (self._SEARCH_KEY, self._MAX_RESULTS, n))
+            n = self._MAX_RESULTS
+        return self._get_n_results(query, n)
+```
+[0]class UnsupportedURLIE{4170,1~4176,35}
+```
+class UnsupportedURLIE(InfoExtractor):
+    _VALID_URL = '.*'
+    _ENABLED = False
+    IE_DESC = False
+
+    def _real_extract(self, url):
+        raise UnsupportedError(url)
+```

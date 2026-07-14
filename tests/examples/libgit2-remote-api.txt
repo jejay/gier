@@ -1,0 +1,363 @@
+name: libgit2 - the remote API
+repo: C/libgit2
+about: A developer browsing the remote API greps the whole prefix `git_remote_*`. Anchored regex + character class lists every such function; long ones collapse, short ones print in full.
+command: uv run gier "^int git_remote_\w+" test-repos/C/libgit2/src/libgit2/remote.c
+
+=== output ===
+[0]int git_remote_create_options_init{194,1~199,1}
+```
+int git_remote_create_options_init(git_remote_create_options *opts, unsigned int version)
+{
+	GIT_INIT_STRUCTURE_FROM_TEMPLATE(
+		opts, version, git_remote_create_options, GIT_REMOTE_CREATE_OPTIONS_INIT);
+	return 0;
+}
+```
+[0]int git_remote_create_init_options{202,1~205,1}
+```
+int git_remote_create_init_options(git_remote_create_options *opts, unsigned int version)
+{
+	return git_remote_create_options_init(opts, version);
+}
+```
+[0]int git_remote_create_with_opts{208,1~320,1}:208:int git_remote_create_with_opts(git_remote **out, const char *url, const git_remote_create_options *opts)
+[0]int git_remote_create{322,1~345,1}:322:int git_remote_create(git_remote **out, git_repository *repo, const char *name, const char *url)
+[0]int git_remote_create_with_fetchspec{347,1~361,1}
+```
+int git_remote_create_with_fetchspec(git_remote **out, git_repository *repo, const char *name, const char *url, const char *fetch)
+{
+	int error;
+	git_remote_create_options opts = GIT_REMOTE_CREATE_OPTIONS_INIT;
+
+	if ((error = ensure_remote_name_is_valid(name)) < 0)
+		return error;
+
+	opts.repository = repo;
+	opts.name = name;
+	opts.fetchspec = fetch;
+	opts.flags = GIT_REMOTE_CREATE_SKIP_DEFAULT_FETCHSPEC;
+
+	return git_remote_create_with_opts(out, url, &opts);
+}
+```
+[0]int git_remote_create_anonymous{363,1~370,1}
+```
+int git_remote_create_anonymous(git_remote **out, git_repository *repo, const char *url)
+{
+	git_remote_create_options opts = GIT_REMOTE_CREATE_OPTIONS_INIT;
+
+	opts.repository = repo;
+
+	return git_remote_create_with_opts(out, url, &opts);
+}
+```
+[0]int git_remote_create_detached{372,1~375,1}
+```
+int git_remote_create_detached(git_remote **out, const char *url)
+{
+	return git_remote_create_with_opts(out, url, NULL);
+}
+```
+[0]int git_remote_dup{377,1~424,1}:377:int git_remote_dup(git_remote **dest, git_remote *source)
+[0]int git_remote_lookup{463,1~573,1}:463:int git_remote_lookup(git_remote **out, git_repository *repo, const char *name)
+[0]int git_remote_set_instance_url{617,1~631,1}
+```
+int git_remote_set_instance_url(git_remote *remote, const char *url)
+{
+	char *tmp;
+
+	GIT_ASSERT_ARG(remote);
+	GIT_ASSERT_ARG(url);
+
+	if ((tmp = git__strdup(url)) == NULL)
+		return -1;
+
+	git__free(remote->url);
+	remote->url = tmp;
+
+	return 0;
+}
+```
+[0]int git_remote_set_url{667,1~670,1}
+```
+int git_remote_set_url(git_repository *repo, const char *remote, const char *url)
+{
+	return set_url(repo, remote, CONFIG_URL_FMT, url);
+}
+```
+[0]int git_remote_set_instance_pushurl{678,1~692,1}
+```
+int git_remote_set_instance_pushurl(git_remote *remote, const char *url)
+{
+	char *tmp;
+
+	GIT_ASSERT_ARG(remote);
+	GIT_ASSERT_ARG(url);
+
+	if ((tmp = git__strdup(url)) == NULL)
+		return -1;
+
+	git__free(remote->pushurl);
+	remote->pushurl = tmp;
+
+	return 0;
+}
+```
+[0]int git_remote_set_pushurl{694,1~697,1}
+```
+int git_remote_set_pushurl(git_repository *repo, const char *remote, const char *url)
+{
+	return set_url(repo, remote, CONFIG_PUSHURL_FMT, url);
+}
+```
+[0]int git_remote__urlfordirection{729,1~763,1}:729:int git_remote__urlfordirection(
+[0]int git_remote_connect_options_init{765,1~772,1}
+```
+int git_remote_connect_options_init(
+	git_remote_connect_options *opts,
+	unsigned int version)
+{
+	GIT_INIT_STRUCTURE_FROM_TEMPLATE(
+		opts, version, git_remote_connect_options, GIT_REMOTE_CONNECT_OPTIONS_INIT);
+	return 0;
+}
+```
+[0]int git_remote_connect_options_dup{774,1~785,1}
+```
+int git_remote_connect_options_dup(
+	git_remote_connect_options *dst,
+	const git_remote_connect_options *src)
+{
+	memcpy(dst, src, sizeof(git_remote_connect_options));
+
+	if (git_proxy_options_dup(&dst->proxy_opts, &src->proxy_opts) < 0 ||
+	    git_strarray_copy(&dst->custom_headers, &src->custom_headers) < 0)
+		return -1;
+
+	return 0;
+}
+```
+[0]int git_remote_connect_options_normalize{906,1~930,1}:906:int git_remote_connect_options_normalize(
+[0]int git_remote_connect_ext{932,1~985,1}:932:int git_remote_connect_ext(
+[0]int git_remote_connect{987,1~1006,1}
+```
+int git_remote_connect(
+	git_remote *remote,
+	git_direction direction,
+	const git_remote_callbacks *callbacks,
+	const git_proxy_options *proxy,
+	const git_strarray *custom_headers)
+{
+	git_remote_connect_options opts = GIT_REMOTE_CONNECT_OPTIONS_INIT;
+
+	if (callbacks)
+		memcpy(&opts.callbacks, callbacks, sizeof(git_remote_callbacks));
+
+	if (proxy)
+		memcpy(&opts.proxy_opts, proxy, sizeof(git_proxy_options));
+
+	if (custom_headers)
+		memcpy(&opts.custom_headers, custom_headers, sizeof(git_strarray));
+
+	return git_remote_connect_ext(remote, direction, &opts);
+}
+```
+[0]int git_remote_ls{1008,1~1018,1}
+```
+int git_remote_ls(const git_remote_head ***out, size_t *size, git_remote *remote)
+{
+	GIT_ASSERT_ARG(remote);
+
+	if (!remote->transport) {
+		git_error_set(GIT_ERROR_NET, "this remote has never connected");
+		return -1;
+	}
+
+	return remote->transport->ls(out, size, remote->transport);
+}
+```
+[0]int git_remote_capabilities{1020,1~1032,1}
+```
+int git_remote_capabilities(unsigned int *out, git_remote *remote)
+{
+	GIT_ASSERT_ARG(remote);
+
+	*out = 0;
+
+	if (!remote->transport) {
+		git_error_set(GIT_ERROR_NET, "this remote has never connected");
+		return -1;
+	}
+
+	return remote->transport->capabilities(out, remote->transport);
+}
+```
+[0]int git_remote_oid_type{1034,1~1050,1}
+```
+int git_remote_oid_type(git_oid_t *out, git_remote *remote)
+{
+	GIT_ASSERT_ARG(remote);
+
+	if (!remote->transport) {
+		git_error_set(GIT_ERROR_NET, "this remote has never connected");
+		*out = 0;
+		return -1;
+	}
+
+#ifdef GIT_EXPERIMENTAL_SHA256
+	return remote->transport->oid_type(out, remote->transport);
+#else
+	*out = GIT_OID_SHA1;
+	return 0;
+#endif
+}
+```
+[0]int git_remote__http_proxy{1176,1~1195,1}
+```
+int git_remote__http_proxy(char **out, git_remote *remote, git_net_url *url)
+{
+	int error;
+
+	GIT_ASSERT_ARG(out);
+	GIT_ASSERT_ARG(remote);
+
+	*out = NULL;
+
+	/*
+	 * Go through the possible sources for proxy configuration,
+	 * Examine the various git config options first, then
+	 * consult environment variables.
+	 */
+	if ((error = http_proxy_config(out, remote, url)) != GIT_ENOTFOUND ||
+	    (error = http_proxy_env(out, remote, url)) != GIT_ENOTFOUND)
+		return error;
+
+	return 0;
+}
+```
+[0]int git_remote_download{1323,1~1350,1}:1323:int git_remote_download(
+[0]int git_remote_fetch{1352,1~1435,1}:1352:int git_remote_fetch(
+[0]int git_remote_prune{1641,1~1753,1}:1641:int git_remote_prune(git_remote *remote, const git_remote_callbacks *callbacks)
+[0]int git_remote_update_tips{2117,1~2171,1}:2117:int git_remote_update_tips(
+[0]int git_remote_connected{2173,1~2182,1}
+```
+int git_remote_connected(const git_remote *remote)
+{
+	GIT_ASSERT_ARG(remote);
+
+	if (!remote->transport || !remote->transport->is_connected)
+		return 0;
+
+	/* Ask the transport if it's connected. */
+	return remote->transport->is_connected(remote->transport);
+}
+```
+[0]int git_remote_stop{2184,1~2192,1}
+```
+int git_remote_stop(git_remote *remote)
+{
+	GIT_ASSERT_ARG(remote);
+
+	if (remote->transport && remote->transport->cancel)
+		remote->transport->cancel(remote->transport);
+
+	return 0;
+}
+```
+[0]int git_remote_disconnect{2194,1~2202,1}
+```
+int git_remote_disconnect(git_remote *remote)
+{
+	GIT_ASSERT_ARG(remote);
+
+	if (git_remote_connected(remote))
+		remote->transport->close(remote->transport);
+
+	return 0;
+}
+```
+[0]int git_remote_list{2266,1~2292,1}:2266:int git_remote_list(git_strarray *remotes_list, git_repository *repo)
+[0]int git_remote_set_autotag{2305,1~2341,1}:2305:int git_remote_set_autotag(git_repository *repo, const char *remote, git_remote_autotag_option_t value)
+[0]int git_remote_prune_refs{2343,1~2346,1}
+```
+int git_remote_prune_refs(const git_remote *remote)
+{
+	return remote->prune_refs;
+}
+```
+[0]int git_remote_rename{2569,1~2607,1}:2569:int git_remote_rename(git_strarray *out, git_repository *repo, const char *name, const char *new_name)
+[0]int git_remote_name_is_valid{2609,1~2637,1}:2609:int git_remote_name_is_valid(int *valid, const char *remote_name)
+[0]int git_remote_add_fetch{2675,1~2678,1}
+```
+int git_remote_add_fetch(git_repository *repo, const char *remote, const char *refspec)
+{
+	return write_add_refspec(repo, remote, refspec, true);
+}
+```
+[0]int git_remote_add_push{2680,1~2683,1}
+```
+int git_remote_add_push(git_repository *repo, const char *remote, const char *refspec)
+{
+	return write_add_refspec(repo, remote, refspec, false);
+}
+```
+[0]int git_remote_get_fetch_refspecs{2719,1~2722,1}
+```
+int git_remote_get_fetch_refspecs(git_strarray *array, const git_remote *remote)
+{
+	return copy_refspecs(array, remote, false);
+}
+```
+[0]int git_remote_get_push_refspecs{2724,1~2727,1}
+```
+int git_remote_get_push_refspecs(git_strarray *array, const git_remote *remote)
+{
+	return copy_refspecs(array, remote, true);
+}
+```
+[0]int git_remote_init_callbacks{2739,1~2744,1}
+```
+int git_remote_init_callbacks(git_remote_callbacks *opts, unsigned int version)
+{
+	GIT_INIT_STRUCTURE_FROM_TEMPLATE(
+		opts, version, git_remote_callbacks, GIT_REMOTE_CALLBACKS_INIT);
+	return 0;
+}
+```
+[0]int git_remote_delete{2892,1~2905,1}
+```
+int git_remote_delete(git_repository *repo, const char *name)
+{
+	int error;
+
+	GIT_ASSERT_ARG(repo);
+	GIT_ASSERT_ARG(name);
+
+	if ((error = remove_branch_config_related_entries(repo, name)) < 0 ||
+	    (error = remove_remote_tracking(repo, name)) < 0 ||
+	    (error = rename_remote_config_section(repo, name, NULL)) < 0)
+		return error;
+
+	return 0;
+}
+```
+[0]int git_remote_default_branch{2907,1~2910,1}
+```
+int git_remote_default_branch(git_buf *out, git_remote *remote)
+{
+	GIT_BUF_WRAP_PRIVATE(out, git_remote__default_branch, remote);
+}
+```
+[0]int git_remote__default_branch{2912,1~2976,1}:2912:int git_remote__default_branch(git_str *out, git_remote *remote)
+[0]int git_remote_upload{2978,1~3051,1}:2978:int git_remote_upload(
+[0]int git_remote_push{3053,1~3081,1}:3053:int git_remote_push(
+[0]int git_remote_is_valid_name{3160,1~3166,1}
+```
+int git_remote_is_valid_name(const char *remote_name)
+{
+	int valid = 0;
+
+	git_remote_name_is_valid(&valid, remote_name);
+	return valid;
+}
+```

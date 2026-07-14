@@ -1,0 +1,9 @@
+name: Express - middleware registration
+repo: JavaScript/express
+about: `app.use` registers middleware. gier lands inside the `function use` definition (54 lines -> collapsed to the match line).
+command: uv run gier "app\.use" test-repos/JavaScript/express/lib/application.js
+
+=== output ===
+[0]function use{190,1~244,1}:190:app.use = function use(fn) {
+[0]function use{190,1~244,1}:195:  // disambiguate app.use([fn])
+[0]function use{190,1~244,1}:213:    throw new TypeError('app.use() requires a middleware function')
