@@ -434,3 +434,20 @@ real-world files from ``test-repos/`` (a cloned repo is skipped when absent):
 ```bash
 uv run python -m unittest discover -s tests -t . -v
 ```
+
+## Snapshot tests & browser
+
+``tests/examples/`` holds *golden* specs -- one ``.txt`` per example that
+records the exact ``uv run gier …`` command and its full expected output (see
+``tests/examples/README.md``). Those same files double as browsable pages:
+
+```bash
+python tools/snapshot_server.py --port 8080
+# open http://127.0.0.1:8080/
+```
+
+The server renders each snapshot and, by parsing the spec, links straight to
+the source on GitHub at the pinned commit: the file (from the command's
+``test-repos/…`` argument) and every matched line / block header (parsed out of
+the gier output) deep-links to ``#L<line>`` on the blob. It is pure stdlib
+(``http.server``), so it needs no extra dependencies.
