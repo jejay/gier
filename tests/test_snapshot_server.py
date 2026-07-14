@@ -6,6 +6,7 @@ the spec files and building GitHub deep links from the pinned test-repos).
 """
 
 import os
+import re
 import sys
 import threading
 import unittest
@@ -60,6 +61,48 @@ class SnapshotServerTest(unittest.TestCase):
         self.assertIn("yt-dlp", body)
         self.assertIn("def _real_extract", body)
         self.assertIn('class="output"', body)
+
+    def test_no_extra_blank_line_between_block_path_and_fence(self):
+        # A matched block-path header is rendered as a <a class="match"> which
+        # is already display:block. Inside <pre> (white-space: pre) a literal
+        # "\n" after it would therefore render as an *extra* blank line
+        # between the path and its code fence. _render_output must suppress that
+        # separator so the visual line stream equals the source verbatim.
+        output = (
+            "[0]class Foo{1,1~9,1}>[1]def bar{2,5~8,1}\n"
+            "```4 spaces unindented\n"
+            "def bar(self):\n"
+            "    return 1\n"
+            "```"
+        )
+        blob = "https://github.com/o/r/blob/abc/rel"
+        rendered = snapshot_server._render_output(output, blob)
+        # The bug signature: an anchor immediately followed by a newline.
+        self.assertNotIn("</a>\n", rendered)
+        # Simulate the browser's display:block line breaking and confirm the
+        # visual lines exactly match the input (no blank lines added/merged).
+        lines, cur = [], ""
+        for part in re.split(r'(<a class="match"[^>]*>.*?</a>)', rendered, flags=re.S):
+            if not part:
+                continue
+            if part.startswith('<a '):
+                if cur:
+                    lines.append(cur)
+                    cur = ""
+                content = re.sub(
+                    r'<a class="match"[^>]*>(.*?)</a>', r'\1', part, flags=re.S
+                )
+                lines.append(content)
+            else:
+                for i, seg in enumerate(part.split('\n')):
+                    cur += seg
+                    if i < part.count('\n'):
+                        lines.append(cur)
+                        cur = ""
+        if cur:
+            lines.append(cur)
+        self.assertEqual([snapshot_server.html.unescape(x) for x in lines],
+                         output.split('\n'))
 
     def test_unknown_example_is_404(self):
         status, _ = self._get("/example/does-not-exist")

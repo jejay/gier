@@ -174,13 +174,17 @@ th { color: #8b93a7; font-weight: 600; }
 
 
 def _render_output(output: str, blob_base: str | None) -> str:
-    lines = output.split("\n")
-    out: list[str] = []
+    # Each token is paired with a flag: is it a block-level <a class="match">?
+    # Such an anchor already forces a line break (its CSS is display: block),
+    # so the literal "\n" that follows it inside the <pre> would otherwise
+    # render as an extra blank line. We therefore suppress the separator that
+    # would follow a block anchor and let the block break do the work.
+    out: list[tuple[str, bool]] = []
     in_fence = False
-    for ln in lines:
+    for ln in output.split("\n"):
         if FENCE_RE.match(ln):
             in_fence = not in_fence
-            out.append(html.escape(ln))
+            out.append((html.escape(ln), False))
             continue
         esc = html.escape(ln)
         line_no = None
@@ -198,10 +202,17 @@ def _render_output(output: str, blob_base: str | None) -> str:
                         line_no = int(found[-1])
         if line_no is not None and blob_base:
             href = html.escape(f"{blob_base}#L{line_no}", quote=True)
-            out.append(f'<a class="match" href="{href}">{esc}</a>')
+            out.append((f'<a class="match" href="{href}">{esc}</a>', True))
         else:
-            out.append(esc)
-    return "\n".join(out)
+            out.append((esc, False))
+    # Join, but never insert a "\n" right after a block anchor: its display
+    # break already separates it from the next line.
+    chunks: list[str] = []
+    for i, (token, is_block) in enumerate(out):
+        if i > 0 and not out[i - 1][1]:
+            chunks.append("\n")
+        chunks.append(token)
+    return "".join(chunks)
 
 
 def render_index(specs: list[dict]) -> str:
