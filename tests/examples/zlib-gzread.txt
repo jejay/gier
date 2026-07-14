@@ -4,7 +4,7 @@ about: What gzip read primitives exist? `gz<word>(`. The regex catches both defi
 command: uv run gier "gz\w+\(" test-repos/C/zlib/gzread.c
 
 === output ===
-14:   blocking, then gz_load() will return 0 if some data has been read, or -1 if
+[]:14:   blocking, then gz_load() will return 0 if some data has been read, or -1 if
 [0]local int gz_load{18,1~47,1}:18:local int gz_load(gz_statep state, unsigned char *buf, unsigned len,
 [0]local int gz_load{18,1~47,1}>[1]if{35,5~43,5}
 ```4 spaces unindented
@@ -41,7 +41,7 @@ if (state->eof == 0) {
     strm->next_in = state->in;
 }
 ```
-92:   gz_look() will return 0 on success or -1 on failure. */
+[]:92:   gz_look() will return 0 on success or -1 on failure. */
 [0]local int gz_look{93,1~170,1}:93:local int gz_look(gz_statep state) {
 [0]local int gz_look{93,1~170,1}>[1]if{97,5~122,5}>[2]if{101,9~106,9}
 ```8 spaces unindented
@@ -98,7 +98,7 @@ if (ret == Z_DATA_ERROR) {              /* deflate stream invalid */
     break;
 }
 ```
-246:   otherwise 0.  gz_fetch() will leave state->how as COPY or GZIP unless the
+[]:246:   otherwise 0.  gz_fetch() will leave state->how as COPY or GZIP unless the
 [0]local int gz_fetch{248,1~277,1}:248:local int gz_fetch(gz_statep state) {
 [0]local int gz_fetch{248,1~277,1}>[1]do{251,5~275,5}>[2]switch{252,9~274,9}:254:            if (gz_look(state) == -1)
 [0]local int gz_fetch{248,1~277,1}>[1]do{251,5~275,5}>[2]switch{252,9~274,9}:260:            if (gz_load(state, state->out, state->size << 1, &(state->x.have))

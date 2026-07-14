@@ -80,7 +80,8 @@ matching the compiled `PATTERN` yields a finding:
 * **inside a block** → the enclosing block's hierarchy plus its source, exactly
   like a `chier -c` query;
 * **outside any block** (docstring, import, top-level statement) → a classic
-  grep line `path:line:code`.
+  grep line, but with the (empty) root block path written as `[]`, i.e.
+  `[]:line:code` (or `path:[]:line:code` when the file name is shown).
 
 Options:
 
@@ -194,7 +195,7 @@ Every `gier` command below is run on `examples/space_sim.rs`.
 $ gier "while" examples/space_sim.rs
 ```
 ~~~
-3:// flow (match guards, if-let, while-let, labeled loops, closures, async fn).
+[]:3:// flow (match guards, if-let, while-let, labeled loops, closures, async fn).
 [0]mod sim{5,1~82,1}>[1]impl World{30,5~68,5}>[2]fn tick,SimError>{35,9~67,9}>[3]for{41,14~65,13}>[4]if{42,17~62,17}>[5]match{44,21~61,21}>[6](arrow){45,25~52,25}
 ```
                         Kind::Star if b.mass > 1e3 => continue 'sim,
@@ -212,8 +213,8 @@ Two findings; in the default `md` format the second finding's source is wrapped
 in a fenced code block, and the leading comment (a plain grep line, outside any
 block) is not fenced:
 * **Line 3** is the file's leading comment — it lives *outside* any `{…}` block,
-  so `gier` falls back to classic `path:line:code` grep output
-  (`3:// flow (…)`). This is the "no block" branch.
+  so `gier` falls back to classic `[]:line:code` grep output
+  (`[]:3:// flow (…)`). This is the "no block" branch.
 * **Line 49** is the `while let` inside the `Kind::Planet` arm. Notice the path
   stops at `>[6](arrow)` and does **not** include a `>[7]while` even though line 49
   is literally a `while`. That is the **`-N`** filter (default `5`): blocks
@@ -226,7 +227,7 @@ block) is not fenced:
 $ gier "match" examples/space_sim.rs
 ```
 ~~~
-3:// flow (match guards, if-let, while-let, labeled loops, closures, async fn).
+[]:3:// flow (match guards, if-let, while-let, labeled loops, closures, async fn).
 [0]mod sim{5,1~82,1}>[1]impl World{30,5~68,5}>[2]fn tick,SimError>{35,9~67,9}>[3]for{41,14~65,13}>[4]if{42,17~62,17}>[5]match{44,21~61,21}
 ```20 spaces unindented
 match body.classify() {
@@ -271,7 +272,7 @@ Three matches (the comment plus two `match` lines). The first `match` is the
 $ gier -M 10 "match" examples/space_sim.rs
 ```
 ~~~
-3:// flow (match guards, if-let, while-let, labeled loops, closures, async fn).
+[]:3:// flow (match guards, if-let, while-let, labeled loops, closures, async fn).
 [0]mod sim{5,1~82,1}>[1]impl World{30,5~68,5}>[2]fn tick,SimError>{35,9~67,9}>[3]for{41,14~65,13}>[4]if{42,17~62,17}>[5]match{44,21~61,21}:44:                    match body.classify() {
 [0]mod sim{5,1~82,1}>[1]fn integrate_star,SimError>{74,5~81,5}
 ```4 spaces unindented
@@ -329,10 +330,10 @@ Three `Ok(..)` hits, each demonstrating a different path through the filters:
 
 ```bash
 $ gier "toy" examples/space_sim.rs
-1:// A toy space simulation. It is intentionally *not* a compiling program --
+[]:1:// A toy space simulation. It is intentionally *not* a compiling program --
 ```
 
-Line 1 is a top-level comment, outside any block — pure `path:line:code`
+Line 1 is a top-level comment, outside any block — pure `[]:line:code`
 output, no hierarchy.
 
 ### `chier`: direct hierarchy queries

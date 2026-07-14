@@ -154,7 +154,7 @@ class GierTest(unittest.TestCase):
         rc, out = self._run(["level", p])
         self.assertEqual(rc, 0)
         self.assertIn("[0]def f", out)  # in-block match -> block path
-        self.assertIn('1:"""level mentioned', out)  # docstring -> grep fallback
+        self.assertIn('[]:1:"""level mentioned', out)  # docstring -> grep fallback (root level)
         # default (md) format has no '--' separator between findings; the block
         # path and the grep-fallback line are simply adjacent.
         self.assertNotIn("\n--\n", out)
@@ -169,7 +169,7 @@ class GierTest(unittest.TestCase):
         p = self._write("a.py", src)
         rc, out = self._run(["level", p])
         self.assertEqual(rc, 0)
-        self.assertIn("1:# level only at top level", out)
+        self.assertIn("[]:1:# level only at top level", out)
 
     def test_multiline_flag_always_set(self):
         self.assertTrue(cli._compile_pattern("x", False).flags & re.MULTILINE)

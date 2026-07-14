@@ -621,11 +621,12 @@ def gier_main(argv: list[str] | None = None) -> int:
                         finding = f"{prefix}{block_path_str}\n{source_block}\n"
                 else:
                     # No enclosing block (e.g. a module-level docstring or
-                    # import): fall back to classic grep output, one
-                    # "path:line:code" line. The file name follows -h/-H and
-                    # the number of files found, exactly like the block
-                    # findings.
-                    finding = f"{prefix}{lineno}:{matched}\n"
+                    # import): fall back to classic grep output, but mark the
+                    # (empty) root-level block path with "[]" so the record
+                    # keeps the "path:line:code" shape and reads as root level.
+                    # The file name follows -h/-H and the number of files found,
+                    # exactly like the block findings.
+                    finding = f"{prefix}[]:{lineno}:{matched}\n"
                 findings.append(finding)
                 rc = 0
 
