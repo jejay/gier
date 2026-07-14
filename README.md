@@ -443,8 +443,13 @@ records the exact ``uv run gier …`` command and its full expected output (see
 
 ```bash
 python tools/snapshot_server.py --port 8080
-# open http://127.0.0.1:8080/
+# from this machine:  http://127.0.0.1:8080/
+# from your laptop:    http://<this-machine-ip>:8080/
 ```
+
+By default it binds to ``0.0.0.0`` (all interfaces), so it is reachable from
+another machine on the same network. Pass ``--host 127.0.0.1`` to restrict it
+to the local machine only.
 
 The server renders each snapshot and, by parsing the spec, links straight to
 the source on GitHub at the pinned commit: the file (from the command's

@@ -294,19 +294,38 @@ class SnapshotHandler(BaseHTTPRequestHandler):
         return
 
 
-def create_server(host: str = "127.0.0.1", port: int = 8080) -> ThreadingHTTPServer:
+def create_server(host: str = "0.0.0.0", port: int = 8080) -> ThreadingHTTPServer:
     return ThreadingHTTPServer((host, port), SnapshotHandler)
 
 
 def main(argv: list[str] | None = None):
     import argparse
+    import socket
     ap = argparse.ArgumentParser(description="Serve gier snapshot tests as a website.")
-    ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument(
+        "--host", default="0.0.0.0",
+        help="interface to bind (default 0.0.0.0 = all interfaces, so it is "
+             "reachable from other machines on the network)",
+    )
     ap.add_argument("--port", type=int, default=8080)
     args = ap.parse_args(argv)
     server = create_server(args.host, args.port)
-    url = f"http://{args.host}:{args.port}/"
-    print(f"Serving gier snapshot tests at {url}")
+    # 0.0.0.0 listens on every interface; tell the user how to reach it.
+    lan = "<this-machine-ip>"
+    if args.host in ("0.0.0.0", ""):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            lan = s.getsockname()[0]
+            s.close()
+        except Exception:
+            pass
+    print(f"Serving gier snapshot tests on {args.host}:{args.port}", flush=True)
+    if args.host in ("0.0.0.0", ""):
+        print(f"  from this machine:  http://127.0.0.1:{args.port}/", flush=True)
+        print(f"  from your laptop:    http://{lan}:{args.port}/", flush=True)
+    else:
+        print(f"  open: http://{args.host}:{args.port}/", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
