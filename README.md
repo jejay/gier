@@ -134,6 +134,89 @@ chier (-p|-c) LINE PATH
   revert to the stricter heuristic.
 * `--help` — show usage.
 
+## Worked example: a toy class
+
+The fastest way to see `gier`/`chier` do their thing is a tiny, real file.
+`examples/toy.py` is ~30 lines: one class with an `__init__` and three methods
+(`deposit`, `withdraw`, `statement`), the last one a little larger, with a
+`for`/`if` and nothing fancy. No imports, no tricks.
+
+```python
+class BankAccount:
+    def __init__(self, owner, balance=0):
+        self.owner = owner
+        self.balance = balance
+        self.history = []
+
+    def deposit(self, amount):
+        if amount <= 0:
+            return False
+        self.balance += amount
+        self.history.append(("deposit", amount))
+        return True
+
+    def withdraw(self, amount):
+        if amount <= 0 or amount > self.balance:
+            return False
+        self.balance -= amount
+        self.history.append(("withdraw", amount))
+        return True
+
+    def statement(self):
+        lines = []
+        lines.append(f"Account of {self.owner}")
+        for kind, amount in self.history:
+            if kind == "deposit":
+                lines.append(f"  +{amount}")
+            else:
+                lines.append(f"  -{amount}")
+        lines.append(f"Balance: {self.balance}")
+        return "\n".join(lines)
+```
+
+### The whole-file hierarchy with `chier`
+
+Run `chier` with no query to print the entire block tree on one line:
+
+```bash
+$ chier examples/toy.py
+[0]class BankAccount{1,1~30,31}>[1]def __init__{2,5~5,25}|[1]def deposit{7,5~12,19}>[2]if{8,9~9,24}<[1]def withdraw{14,5~19,19}>[2]if{15,9~16,24}<[1]def statement{21,5~30,31}>[2]for{24,9~28,44}>[3]if{25,13~26,44}|[3]else{27,13~28,44}
+```
+
+Reading left to right with the marker table: `[0]class BankAccount` is the top
+level; each `>[1]…` is a method nested inside it (`__init__`, `deposit`,
+`withdraw`, `statement`), all siblings (`|`). The small `>[2]if` / `>[2]for`
+blocks are the control-flow statements living inside each method.
+
+### `gier`: grep with the enclosing block
+
+Search for a method name and `gier` prints the enclosing block plus its source:
+
+```bash
+$ gier "def withdraw" examples/toy.py
+```
+~~~
+[0]class BankAccount{1,1~30,31}>[1]def withdraw{14,5~19,19}
+```4 spaces unindented
+def withdraw(self, amount):
+    if amount <= 0 or amount > self.balance:
+        return False
+    self.balance -= amount
+    self.history.append(("withdraw", amount))
+    return True
+```
+~~~
+
+Notice the block path stops at `def withdraw` — `gier`'s default `-N 5` merges
+blocks shorter than 5 lines (here the 2-line `if`) into their parent, so you get
+the enclosing *method*, not a one-line `if`. That is the length filter at work;
+`-M` collapses long blocks the other way. Both filters come into play in the
+next example.
+
+Now for something with real control flow — two Rust files (deliberate dummies
+that need not compile) that exercise `match` arms, guards, `if let` / `while
+let`, labeled loops, and `async fn`.
+
 ## Worked example: Rust control flow
 
 The repository ships two small, **deliberately non-compiling** Rust files under
@@ -142,15 +225,102 @@ control flow. They do **not** need to compile — they are dummies, and the tool
 never parse them as a real compiler would (recall: the analyzer is a tiny
 tokenizer, not a full Rust front-end).
 
+* `examples/state_machine.rs` — the gentle one to start with: two `enum`s, an
+  `impl` with a `match` (including a guard), a nested arm block, and `matches!`.
 * `examples/space_sim.rs` — the longer one: a `mod` containing structs, `impl`
   blocks, an `async fn`, a labeled `'sim:` loop, `match` arms with guards,
   `if let` / `while let`, a `loop`, and closure-style `=>` arms.
-* `examples/state_machine.rs` — the shorter one: two `enum`s, an `impl` with a
-  `match` (including a guard), a nested arm block, and `matches!`.
+
+**Rust at a glance — you do not need to know Rust to follow this.** Both files
+use only a handful of constructs; here is everything that appears:
+
+* `mod`, `struct`, `enum`, `impl`, `fn` — a module and the items inside it:
+  data types (`struct`/`enum`) plus the method block (`impl`) and functions
+  (`fn`) attached to them. gier reports each as its own *block*.
+* `match X { A => B, C if cond => { … }, _ => … }` — Rust's `switch`. Each
+  `A => B` is an **arm**; the `=>` and the code after it form that arm's body,
+  which gier labels `(arrow)`. A `if cond` after the pattern is a **guard**.
+* `if let Some(x) = …` / `while let Some(x) = …` — an `if`/`while` that only
+  runs when a pattern matches (here, when an `Option`/iterator yields a value).
+  To gier they are just `if`/`while` blocks.
+* `'sim: for … { … continue 'sim … }` — a **labeled loop**: `'sim:` names the
+  loop so `continue 'sim` / `break 'sim` jump straight to it. To gier it is a
+  plain `for`/`loop` block.
+* `Result<(), SimError>` — a return type that is `Ok(())` or `Err(..)`; `?`
+  bails out on `Err`. Just a normal `fn` to gier.
+
+You can safely skim the Rust and watch only the *block structure* — that is
+what gier is reporting.
 
 ### Whole-file hierarchy with `chier`
 
-Run `chier` on a file with no query to get the entire block tree on one line:
+Run `chier` on a file with no query to get the entire block tree on one line.
+Start with the short file — its whole source is shown so you can map every
+output token back to the code:
+
+```rust
+// A tiny state machine, also just for show (not a compiling program).
+// Demonstrates an enum, a match with a guard, and a nested arm block.
+
+enum State {
+    Idle,
+    Running { count: u32 },
+    Done,
+}
+
+enum Event {
+    Start,
+    Tick,
+    Reset,
+}
+
+impl State {
+    pub fn advance(self, input: Event) -> State {
+        match (self, input) {
+            (State::Idle, Event::Start) => State::Running { count: 0 },
+            (State::Running { count }, Event::Tick) if count < 10 => {
+                let next = count + 1;
+                State::Running { count: next }
+            }
+            (State::Running { .. }, Event::Tick) => State::Done,
+            (State::Done, Event::Reset) => State::Idle,
+            _ => self,
+        }
+    }
+
+    pub fn is_active(&self) -> bool {
+        matches!(self, State::Running { .. })
+    }
+}
+```
+
+```bash
+$ chier examples/state_machine.rs
+[0]enum State{4,1~8,1}>[1]Idle,Running{5,5~6,26}<[0]enum Event{10,1~14,1}|[0]impl State{16,1~33,1}>[1]fn advance->State{17,5~28,5}>[2]match{18,9~27,9}>[3](arrow){19,14~19,70}|[3]State::Running{20,14~20,37}|[3]if{20,40~23,13}>[4]State::Running{22,17~22,46}<[3]State::Running{24,14~24,34}<<[1]fn is_active->bool{30,5~32,5}>[2]matches!(self,State::Running{31,9~31,44}
+```
+
+Reading left to right, with the marker table from the block-path syntax
+section above:
+
+* `[0]enum State{4,1~8,1}` — top level; the `enum` spans lines 4–8.
+* `>[1]Idle,Running{5,5~6,26}` — `>` = child: the enum's variants
+  (`Idle`, `Running`, `Done`) are listed inside it, on lines 5–6.
+* `<[0]enum Event{10,1~14,1}` — `<` = ascend one level back to the top, then a
+  sibling `enum Event` (lines 10–14).
+* `|[0]impl State{16,1~33,1}` — `|` = sibling at the top level: the `impl` block
+  holding `State`'s methods (lines 16–33).
+* `>[1]fn advance->State{17,5~28,5}` — `>` = child: the `advance` method.
+* `>[2]match{18,9~27,9}` — inside `advance`, the `match` (lines 18–27).
+* `>[3](arrow){19,14~19,70}` — the first `match` arm (`(State::Idle, …) => …`);
+  gier calls the arm body `(arrow)`, spanning to column 70 on line 19.
+* `|[3]State::Running{20,14~20,37}` — `|` = sibling arm (the guarded one,
+  `if count < 10`), whose `{ … }` body is the block on lines 20–23.
+* `>[3]if{20,40~23,13}` — the guard `if count < 10` is its own block.
+* `<<[1]fn is_active->bool{30,5~32,5}` — `<<` climbs two levels (out of the
+  `match` and out of `advance`) back to the `impl`, then a sibling `fn
+  is_active` (lines 30–32).
+
+Now the longer file — the same markers, just deeper nesting:
 
 ```bash
 $ chier examples/space_sim.rs
@@ -158,7 +328,7 @@ $ chier examples/space_sim.rs
 ```
 
 (The real output is a single line with no wrapping; it is shown wrapped here
-only for the docs.) Reading it with the marker table above:
+only for the docs.) The markers mean the same as above:
 
 * `[0]mod sim{5,1~82,1}` — top level; the module spans lines 5–82.
 * `>[1]struct Body{8,5~12,5}` — `>` means "child": `struct Body` nests inside
@@ -177,13 +347,6 @@ only for the docs.) Reading it with the marker table above:
   limitation of a non-parser.
 * `<<<[4]else if{62,19~64,17}` — three `<` means "climb three levels" from the
   nested `while`/`if` back up to the `else if`.
-
-The short file reads just as neatly:
-
-```bash
-$ chier examples/state_machine.rs
-[0]enum State{4,1~8,1}>[1]Idle,Running{5,5~6,26}<[0]enum Event{10,1~14,1}|[0]impl State{16,1~33,1}>[1]fn advance->State{17,5~28,5}>[2]match{18,9~27,9}>[3](arrow){19,14~19,70}|[3]State::Running{20,14~20,37}|[3]if{20,40~23,13}>[4]State::Running{22,17~22,46}<[3]State::Running{24,14~24,34}<<[1]fn is_active->bool{30,5~32,5}>[2]matches!(self,State::Running{31,9~31,44}
-```
 
 ### `gier`: grep with the enclosing block
 
